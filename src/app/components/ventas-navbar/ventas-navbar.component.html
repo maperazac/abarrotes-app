@@ -1,0 +1,10 @@
+<div class="d-flex animated fadeIn faster bg-light p-3">
+    <button [ngClass]="botonSeleccionado == 1 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(1)"><i class="fa fa-plus-square" aria-hidden="true"></i> INS Varios</button>
+    <button [ngClass]="botonSeleccionado == 2 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(2)"><i class="fa fa-edit" aria-hidden="true"></i> Artículo común</button>
+    <button class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(3)"><i class="fa fa-search" aria-hidden="true"></i> <strong> F10</strong> Buscar</button>
+    <button [ngClass]="botonSeleccionado == 4 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(4)"><i class="fa fa-cubes" aria-hidden="true"></i> Mayoreo</button>
+    <button [ngClass]="botonSeleccionado == 5 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(5)"><i class="fa fa-calendar" aria-hidden="true"></i> Entradas</button>
+    <button [ngClass]="botonSeleccionado == 6 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(6)"><i class="fa fa-calendar" aria-hidden="true"></i> Salidas</button>
+    <button [ngClass]="botonSeleccionado == 7 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(7)"><i class="fa fa-calendar" aria-hidden="true"></i> Borrar artículo</button>
+  </div>
+  <hr>

@@ -1,0 +1,11 @@
+.row-selected {
+    th, td {
+        background-color: #56a8ff;
+        color: #fff;
+    }
+}
+
+.table-hover tbody .row-selected:hover {
+    color: #fff;
+    background-color: #7bbafd !important;
+}

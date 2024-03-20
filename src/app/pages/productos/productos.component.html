@@ -1,0 +1,4 @@
+<app-productos-navbar (evento)="procesarEvento($event)"></app-productos-navbar>
+
+<app-nuevo-producto *ngIf="botonSeleccionado == 1" [esModificacion] = false></app-nuevo-producto>
+<app-nuevo-producto *ngIf="botonSeleccionado == 2" [esModificacion] = true></app-nuevo-producto>

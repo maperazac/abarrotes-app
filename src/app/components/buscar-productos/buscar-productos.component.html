@@ -1,0 +1,28 @@
+<div class="p3 text-left busqueda-container-dialog">
+    <h3>Búsqueda de artículos</h3>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1"><i class="fa fa-search"></i></span>
+      </div>
+      <input type="text" (keyup) = "filtrarProductosDeLaBusqueda($event)" class="form-control" id="palabraClave" name="palabraClave" #palabraClave placeholder="Teclee las primeras letras del producto" aria-label="Username" aria-describedby="basic-addon1" autocomplete="off">
+    </div>
+    <table class="table table-sm">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Descripción</th>
+          <th scope="col">Precio venta</th>
+          <th scope="col">Departamento</th>
+          <th scope="col">Eliminar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let producto of productos; let i = index">
+          <td>{{ producto.descripcion }}</td>
+          <td>{{ producto.precioVenta | currency: '$' }}</td>
+          <td>{{ producto.departamento }}</td>
+          <td class="text-center" (click)="eliminarProducto(producto)"><i class="fa fa-trash"></i></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  

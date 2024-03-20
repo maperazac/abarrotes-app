@@ -1,0 +1,172 @@
+<div class="p-3 animated fadeIn faster">
+    <h4 *ngIf="!esModificacion">Nuevo producto</h4> 
+    <h4 *ngIf="esModificacion">Modificar producto</h4> 
+    <br>
+  
+  <div class="row w-50">
+    <div class="col">
+      
+      <form *ngIf="esModificacion" (submit)="buscarProductoPorCodigoDeBaras()">
+        <div class="form-group">
+          <div class="form-group row">
+            <label class="col-form-label col-sm-2 text-right"></label>
+            <div class="col-sm-10">
+              <div class="input-group">
+                <input type="text" class="form-control" [(ngModel)] = "buscarProducto.palabraClave" name="codigoDeProducto" id="codigoDeProducto" #codigoDeProducto placeholder="Código del producto" aria-label="Código del producto" aria-describedby="button-addon2" autocomplete="off">
+                <div class="input-group-append">
+                  <button class="btn btn-success" (click)="buscarProductoPorCodigoDeBaras()" type="button" id="button-addon2"><i class="fa fa-search"></i> Buscar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <form [formGroup] = "formulario" (ngSubmit) = "guardar()">  
+        
+        <div class="form-group row" *ngIf="esModificacion" hidden>
+          <label class="col-form-label col-sm-2 text-right">ID</label>
+          <div class="col-sm-10">
+            <span
+                    id="idProducto"></span> 
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Código de barras</label>
+          <div class="col-sm-10">
+            <input type="text"
+                    class="form-control"
+                    formControlName="codigoDeBarras"
+                    name="codigoDeBarras"
+                    id="codigoDeBarras"
+                    required>
+          </div>
+        </div>
+  
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Descripción</label>
+          <div class="col-sm-10">
+            <input type="text"
+                    class="form-control"
+                    formControlName="descripcion"
+                    name="descripcion"
+                    required>
+          </div>
+        </div>
+  
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Se vende</label>
+          <div class="col-sm-10">
+            <div class="row">
+              
+              <div class="col">
+                <button [ngClass]="formulario.controls['seVende'].value == 1 ? 'btn-primary' : 'btn-outline-primary'" class="btn w-100" type="button" (click)="setSeVende(1)">
+                  Por unidad / pieza
+                </button>
+              </div>
+      
+              <div class="col">
+                <button [ngClass]="formulario.controls['seVende'].value == 2 ? 'btn-primary' : 'btn-outline-primary'" class="btn w-100" type="button" (click)="setSeVende(2)">
+                  A granel
+                </button>
+              </div>
+      
+              <div class="col">
+                <button [ngClass]="formulario.controls['seVende'].value == 3 ? 'btn-primary' : 'btn-outline-primary'" class="btn w-100" type="button" (click)="setSeVende(3)">
+                  Como paquete (kit)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Precio costo</label>
+          <div class="input-group col-sm-10">
+            <div class="input-group-prepend">
+              <span class="input-group-text">$</span>
+            </div>
+            <input type="number"
+                    class="form-control"
+                    formControlName="precioCosto"
+                    name="precioCosto"
+                    (keyup) = "validarCosto($event)"
+                    required>
+          </div>
+        </div>
+  
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Ganancia</label>
+          <div class="input-group col-sm-10">
+            <input type="number"
+                    class="form-control"
+                    formControlName="ganancia"
+                    name="ganancia"
+                    (keyup) = "calcularPrecioVenta($event)"
+                    required>
+            <div class="input-group-append">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+        </div>
+  
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Precio venta</label>
+          <div class="input-group col-sm-10">
+            <div class="input-group-prepend">
+              <span class="input-group-text">$</span>
+            </div>
+            <input type="number"
+                    class="form-control"
+                    formControlName="precioVenta"
+                    name="precioVenta"
+                    (keyup) = "calcularGanancia($event)"
+                    required>
+          </div>
+        </div>
+  
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Precio mayoreo</label>
+          <div class="input-group col-sm-10">
+            <div class="input-group-prepend">
+              <span class="input-group-text">$</span>
+            </div>
+            <input type="number"
+                    class="form-control"
+                    formControlName="precioMayoreo"
+                    name="precioMayoreo"
+                    required>
+          </div>
+        </div>
+  
+        <div class="form-group row">
+          <label class="col-form-label col-sm-2 text-right">Departamento</label>
+          <div class="input-group col-sm-10">
+            <select #departamentos class="custom-select" id="inputGroupSelect01" (change)="setDepartamento(departamentos.value)">
+              <option value="0" selected>- Sin departamento -</option>
+              <option value="1">Abarrotes</option>
+              <option value="2">Bebidas</option>
+              <option value="3">Frutas y verduras</option>
+            </select>
+          </div>
+        </div>
+  
+        <hr>
+  
+        <div class="form-group text-center">
+          <button type="submit"
+                  class="btn btn-primary w-25">
+                  <span *ngIf="!esModificacion">
+                    <i class="fa fa-save"></i> Guardar producto
+                  </span>
+                  <span *ngIf="esModificacion">
+                    <i class="fa fa-save"></i> Actualizar
+                  </span>
+          </button>
+        </div>
+  
+      </form>
+    </div>
+  </div>
+  </div>
