@@ -19,10 +19,43 @@ export class VentasComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
 
   handleKeyDown(event: KeyboardEvent) {
-    if(event.code == 'F10') {
+    console.log(event.code)
+    if(event.code == 'F10') {  // F10  para abrir popup de busqueda de productos
       event.preventDefault();
       this.procesarEvento(3);
     }
+
+    if(event.code == 'Delete') {  // DEL para borrar elemento seleccionado de la venta actual
+      event.preventDefault();
+      this.procesarEvento(7); 
+    }
+
+    if(event.code == 'ArrowUp' || event.code == 'ArrowDown') {  // Flecha arriba para navegacion en la tabla de productos en venta actual
+      // event.preventDefault();
+      this.navegacionConFlechas(); 
+    }
+
+    if(event.code == 'NumpadAdd') {  // + Para aumentar la cantidad de un producto en 1
+      event.preventDefault();
+      this.agregarCantidad(this.rowSelected); 
+    }
+
+    if(event.code == 'NumpadSubtract') {  // - Para disminuir la cantidad de un producto en 1
+      event.preventDefault();
+      this.restarCantidad(this.rowSelected); 
+    }
+
+    // Usar para prevenir acciones combinadas como CTRL+P y poder usar comandos para controlar el sistema
+    const {key, keyCode, metaKey, shiftKey, altKey, ctrlKey} = event; 
+      if(key === "c" && (ctrlKey || metaKey)){  // EJEMPLO
+        event.preventDefault();
+        console.log("copy prevented");
+      }
+
+      if((key === "P" || key === "p") && (ctrlKey || metaKey)){ // CTRL+P  Para abrir popup de producto común
+        event.preventDefault();
+        this.procesarEvento(2);
+      }
   }
 
   @Input() modalCerrado;
@@ -97,6 +130,8 @@ export class VentasComponent implements OnInit {
       this.botonSeleccionado = id;
     } 
 
+    // -----------------------------------------------------------------
+
     if(id == 2) {  // Articulo común
       const { value: formValues } = await Swal.fire({
         title: 'Producto común',
@@ -111,10 +146,11 @@ export class VentasComponent implements OnInit {
           Cantidad: <br/>
           <input type="number" id="cantidadProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
         </div>
+        <div style="width: 3%; display: flex; align-items: center; margin-top: 20px; margin-right: 2px;"><i class="fa fa-times"></i></div>
         
         <div style="width: 50%;">
           Precio: <br/>
-          <input type="text" id="precioProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
+          <input type="number" id="precioProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
         </div>
         `,
         allowOutsideClick: false,
@@ -138,11 +174,9 @@ export class VentasComponent implements OnInit {
         }
       });
       if (formValues) {
-        // console.log(formValues)
-        // Swal.fire(JSON.stringify(formValues));
         const nuevoProductoComun: ProductoInterface = {
-          id: '',
-          codigoDeBarras: 'Producto común (sin código)',
+          id: this.getRandomInt(1000000, 9999999).toString(),
+          codigoDeBarras: "PC" + this.getRandomInt(1000000, 9999999).toString(),
           descripcion: formValues[0],
           seVende: 1,
           precioCosto: 0,
@@ -157,6 +191,8 @@ export class VentasComponent implements OnInit {
       }
     }
 
+    // -----------------------------------------------------------------
+
     if(id == 3) { // Abrir modal de busqueda de productos
       Swal.fire({
           allowOutsideClick: false,
@@ -165,8 +201,6 @@ export class VentasComponent implements OnInit {
           allowEscapeKey: false,
           width: '1000px',
           showConfirmButton: false,
-          // confirmButtonText: `Cerrar`,
-          // showConfirmButton: false,
           didOpen:() => {
             const popup = Swal.getPopup()!
             this.busquedaInput = popup.querySelector('#palabraClave') as HTMLInputElement
@@ -177,36 +211,89 @@ export class VentasComponent implements OnInit {
             this.inputProductoSeleccionado.value='';
             },
           didClose: () => {
-            
             setTimeout(() => {
                 const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
                 inputCodigoDeProducto.focus();
               }, 100);
             },
-            preConfirm: () => {
-              // console.log(inputProductoSeleccionado.value)
-            }
-          }).then(res=>{
-            // NO BORRAR!!!!!!!!!!!!!!!!!! USAR PARA AGREGAR EL PRODUCTO SELECCIONADO A LA LISTA DE ARTICULOS PARA VENTA
-            if(this.inputProductoSeleccionado.value != '') {
-              console.log("agregar a la venta: ", this.inputProductoSeleccionado.value)
-              this.agregarProductoVentaActual(this.inputProductoSeleccionado.value)
-            } else {
-              console.log("nada que agregar")
-            }
-          })
+          preConfirm: () => {
+            // console.log(inputProductoSeleccionado.value)
+          }
+        }).then(res=>{
+          // NO BORRAR!!!!!!!!!!!!!!!!!! USAR PARA AGREGAR EL PRODUCTO SELECCIONADO A LA LISTA DE ARTICULOS PARA VENTA
+          if(this.inputProductoSeleccionado.value != '') {
+            console.log("agregar a la venta: ", this.inputProductoSeleccionado.value)
+            this.agregarProductoVentaActual(this.inputProductoSeleccionado.value)
+          } else {
+            console.log("nada que agregar")
+          }
+        })
     }
+
+    // -----------------------------------------------------------------
+
+    if (id == 7) {  // Eliminar producto seleccionado de la venta actual
+      let elemento = (<HTMLInputElement>document.querySelector('input[name=exampleRadios]:checked'))
+      
+      if(elemento) {
+        Swal.fire({
+          title: "¿Borrar producto seleccionado?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Borrar producto",
+          cancelButtonText: "Cancelar",
+          didClose: () => {
+            const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
+            inputPalabraClave.focus();
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.borrarProductoVentaActual(elemento.id)
+          }
+        });
+      } 
+    }
+  }
+
+  navegacionConFlechas() {
+    let elemento = (<HTMLInputElement>document.querySelector('input[name=exampleRadios]:checked'))
+    if(elemento){
+      elemento.focus() 
+    } else {
+      let elemento = (<HTMLInputElement>document.querySelector('input[name=exampleRadios]'))
+      if(elemento){
+        elemento.focus()
+      }
+    }
+  }
+
+  getRandomInt(min, max) {
+    const minCeiled = Math.ceil(min);
+    const maxFloored = Math.floor(max);
+    return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled); // The maximum is exclusive and the minimum is inclusive
   }
 
   async agregarProductoVentaActual(codigo) {
     this.buscarProducto.palabraClave = '';
+
+    let cantidad = 1;
+
+    if (codigo.includes("*")) {
+      const words = codigo.split('*');
+      if(words[0] != '' && words[1] != ''){
+        codigo = words[1]
+        cantidad = parseInt(words[0]);
+      }
+    } 
     await this.productosService.obtenerProductoPorCodigoDeBarras(codigo).then(docRef => {
       const productos: any[] = [];
 
       docRef.forEach ( producto => {
         productos.push({
           id: producto.id,
-          cantidad: 1,
+          cantidad: cantidad,
           ...producto.data()
         })
       })
@@ -234,33 +321,45 @@ export class VentasComponent implements OnInit {
             } 
           })
 
-          productoRepetido ? this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + 1 : this.productosVentaActual.push(...productos);
+          productoRepetido ? this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + cantidad : this.productosVentaActual.push(...productos);
           
         } else {
           this.productosVentaActual.push(...productos)
         }
+        this.selectRow(productos[0].codigoDeBarras)
       }
       this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
 
     }).catch( e => console.log('error: ', e))
   }
 
-  restarCantidad(id) {
-    let item = this.productosVentaActual.findIndex(i => i.id === id);
-
-    if(this.productosVentaActual[item].cantidad === 1) {
-      this.productosVentaActual.splice(item, 1)
-      this.rowSelected = '0'
-    } else {
-      this.productosVentaActual[item].cantidad -= 1;
-    }
-
-    this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+  borrarProductoVentaActual(codigo) {
+    this.productosVentaActual.forEach((item, index) => {
+      if (item.codigoDeBarras === codigo) this.productosVentaActual.splice(index, 1);
+    })
+    this.ventasService.$productosVentaActual.emit(this.productosVentaActual);
   }
 
-  agregarCantidad(id) {
-    let item = this.productosVentaActual.findIndex(i => i.id === id);
-    this.productosVentaActual[item].cantidad += 1;
-    this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+  restarCantidad(codigoDeBarras) {
+    let item = this.productosVentaActual.findIndex(i => i.codigoDeBarras === codigoDeBarras);
+
+    if(item>-1) {
+      if(this.productosVentaActual[item].cantidad === 1) {
+        this.productosVentaActual.splice(item, 1)
+        this.rowSelected = '0'
+      } else {
+        this.productosVentaActual[item].cantidad -= 1;
+      }
+      this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+    }
+    
+  }
+
+  agregarCantidad(codigoDeBarras) {
+    let item = this.productosVentaActual.findIndex(i => i.codigoDeBarras === codigoDeBarras);
+    if(item>-1) {
+      this.productosVentaActual[item].cantidad += 1;
+      this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+    }    
   }
 }

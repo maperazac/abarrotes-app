@@ -40,7 +40,7 @@
   </table>
   <div style="height: calc(100vh - 451px); overflow-y: auto; border-bottom: solid 1px gainsboro;">
     <div *ngFor="let producto of productosVentaActual; let i = index" class="animated fadeIn faster">
-      <input class="form-check-input" type="radio" name="exampleRadios" [id]=producto.codigoDeBarras value="option1" checked>
+      <input (change)="selectRow(producto.codigoDeBarras)" class="form-check-input" type="radio" name="exampleRadios" [id]=producto.codigoDeBarras [value]=producto.codigoDeBarras checked>
       <div class="radio-productos-venta"  [ngClass]="i % 2 === 0 ? 'even' : 'odd'">
         <label [for]=producto.codigoDeBarras class="form-check-label w-100">
           <label class="form-check-label text-center" [for]=producto.codigoDeBarras  style="width:15%; padding: .5rem; border-right: solid 1px #fff;">
@@ -52,9 +52,9 @@
           <label class="form-check-label text-center" [for]=producto.codigoDeBarras style="width:15%; padding: .5rem; border-right: solid 1px #fff;">{{producto.precioVenta | currency: '$'}}</label>
           <label class="form-check-label" [for]=producto.codigoDeBarras style="width:15%; padding: 0 .5rem;">
             <div class="btn-group-sm d-flex justify-content-between" role="group">
-              <button type="button" class="btn btn-secondary btn-outline-light" (click)="restarCantidad(producto.id)"><i class="fa fa-minus"></i></button>
-              <button type="button" class="btnCantidad">{{producto.cantidad}}</button>
-              <button type="button" class="btn btn-secondary btn-outline-light" (click)="agregarCantidad(producto.id)"><i class="fa fa-plus"></i></button>
+              <button tabindex="-1" type="button" class="btn btn-secondary btn-outline-light" (click)="restarCantidad(producto.codigoDeBarras)"><i class="fa fa-minus"></i></button>
+              <button tabindex="-1" type="button" class="btnCantidad">{{producto.cantidad}}</button>
+              <button tabindex="-1" type="button" class="btn btn-secondary btn-outline-light" (click)="agregarCantidad(producto.codigoDeBarras)"><i class="fa fa-plus"></i></button>
             </div>
           </label>
           <label class="form-check-label text-right" [for]=producto.codigoDeBarras style="width:15%; padding: .5rem; border-right: solid 1px #fff;  border-left: solid 1px #fff;">
