@@ -1,0 +1,22 @@
+
+<div class="row" style="--bs-gutter-x: 0 !important">
+    <div class="col col-10 d-flex justify-content-between p-3">
+        <div>
+            <div>
+                <h3>{{cantidadArticulos}} Productos en la venta actual.</h3>
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-outline-secondary mr-2"><span class="functionKeys">F5</span><i class="fa fa-refresh"></i> Cambiar</button>
+                <button class="btn btn-outline-secondary mr-2"><span class="functionKeys">F6</span><i class="fa fa-star"></i> Pendiente</button>
+                <button class="btn btn-outline-secondary"><i class="fa fa-trash"></i> Eliminar</button>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-primary h-100"><span class="functionKeys">F12</span><i class="fa fa-shopping-cart"></i> Cobrar</button>
+        </div>
+    </div>
+    <div class="col col-2 p-2 totalVentaPesos">
+        {{ventaTotalPesos | currency: '$'}}
+    </div>
+</div>
+

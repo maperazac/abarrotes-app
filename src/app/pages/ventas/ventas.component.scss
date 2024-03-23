@@ -5,7 +5,47 @@
     }
 }
 
-.table-hover tbody .row-selected:hover {
-    color: #fff;
-    background-color: #7bbafd !important;
+// .table-hover tbody .row-selected:hover {
+//     color: #fff;
+//     background-color: #7bbafd !important;
+// }
+
+.radio-productos-venta {
+    border-top: 1px solid #dee2e6;
+    display: block;
+    min-height: 1.5rem;
+    // padding-left: 1.5em;
+
+    // padding: 0.5rem;
+    .form-check-input{
+        opacity: 1;
+    }
+    // label {
+    //     margin: .2rem;
+    // }
 }
+
+.form-check-label span {
+    padding: 0.5rem;
+    border-right: solid 1px #fff;
+}
+
+.radio-productos-venta.even {
+    background-color: #f3f3f348;
+}
+
+.radio-productos-venta.odd {
+    background-color: #0000000d;
+}
+
+input[type="radio"]:checked {
+    .radio-productos-venta {
+        background-color:red;
+    }
+}
+
+input[type="radio"]:checked+.radio-productos-venta, input[type="radio"]:checked+.radio-productos-venta div .btnCantidad {
+    background-color: #0c7bff;
+    color: #fff;
+    // padding-bottom: 0.5rem;
+  }

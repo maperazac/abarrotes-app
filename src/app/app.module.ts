@@ -18,7 +18,7 @@ import { VentasNavbarComponent } from './components/ventas-navbar/ventas-navbar.
 import { BuscarProductosComponent } from './components/buscar-productos/buscar-productos.component';
 import { ProductosNavbarComponent } from './components/productos-navbar/productos-navbar.component';
 import { NuevoProductoComponent } from './components/nuevo-producto/nuevo-producto.component';
-import { ModalComponent } from './modals/modal/modal.component';
+import { VentasFooterComponent } from './components/ventas-footer/ventas-footer.component';
 
 @NgModule({
   declarations: [
@@ -32,7 +32,7 @@ import { ModalComponent } from './modals/modal/modal.component';
     BuscarProductosComponent,
     ProductosNavbarComponent,
     NuevoProductoComponent,
-    ModalComponent
+    VentasFooterComponent,
   ],
   imports: [
     BrowserModule,
@@ -42,7 +42,7 @@ import { ModalComponent } from './modals/modal/modal.component';
     provideFirestore(() => getFirestore()),
     FormsModule,
     HttpClientModule,
-    ReactiveFormsModule 
+    ReactiveFormsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

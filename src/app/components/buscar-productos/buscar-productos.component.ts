@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
 import { ProductosService } from '../../services/productos.service';
 import { ProductoModel } from 'src/app/models/producto.model';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
@@ -11,36 +11,49 @@ import Swal from 'sweetalert2';
 })
 export class BuscarProductosComponent implements OnInit {
 
+  @HostListener('keydown', ['$event'])
+
+  handleKeyDown(event: any) {
+    if(event.code == 'Escape') {
+      event.preventDefault();
+      event.target.value = '';
+      // this.filtrarProductosDeLaBusqueda(event);
+      this.cerrarBusqueda(event);
+      // this.procesarEvento(3);
+    }
+  }
+
   productos: ProductoInterface[] = [];
   productosTemp = this.productos;
   @ViewChild('palabraClave') inputPalabraClave:ElementRef;
+  ProductoSeleccionado: ProductoInterface;
+  display = "none";
+  activarBotonAceptar=false;
 
   constructor(private productosService: ProductosService, private el: ElementRef) { }
 
   ngOnInit() {
     const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
     inputPalabraClave.focus();
-    inputPalabraClave.value='';
+    // inputPalabraClave.value='';
 
     this.productosService.obtenerProductos().subscribe(productos => {
       this.productos = productos;
+      this.productosTemp = productos;
     })
-  }
 
-
-  ngOnDestroy() {
-    console.log("destoyu")
+    // this.idProductoSeleccionado = '';
   }
 
   filtrarProductosDeLaBusqueda(event: any) {
     if (event.target.value.length >= 3) {
-      // console.log(this.productos)
-      this.productos = this.productos.filter((obj) => {
-        return obj.descripcion.toLowerCase() == event.target.value.toLowerCase()
+      this.productosTemp = this.productos.filter((obj) => {
+        return obj.descripcion.toLowerCase().includes(event.target.value.toLowerCase())
       })
-      // console.log(this.productosTemp);
+    } else {
+      this.productosTemp = this.productos;
     }
-}
+  }
 
 
   eliminarProducto(producto: ProductoInterface) {
@@ -67,16 +80,52 @@ export class BuscarProductosComponent implements OnInit {
           text: "Se ha eliminado el producto",
           icon: "success"
         });
-      } else if (
-        /* Read more about handling dismissals below */
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        // swalWithBootstrapButtons.fire({
-        //   title: "Cancelled",
-        //   text: "Your imaginary file is safe :)",
-        //   icon: "error"
-        // });
+      } else 
+      {
+        // Swal.fire({
+        //   html: "ok"
+        // })
       }
     });
+  }
+
+  setProductoSeleccionado(producto: ProductoInterface) {
+    // console.log(id)
+    this.ProductoSeleccionado = producto;
+    const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
+    inputPalabraClave.focus();
+    this.activarBotonAceptar = true;
+  }
+
+  cerrarBusqueda(event: any) {
+    this.filtrarProductosDeLaBusqueda(event);
+    this.ProductoSeleccionado = <ProductoInterface>{}
+    console.log(this.ProductoSeleccionado)
+    this.activarBotonAceptar = false;
+    setTimeout(() => {
+      Swal.close();
+    }, 50);
+  }
+
+  agregarProductoALaVenta(event: any) {
+    this.filtrarProductosDeLaBusqueda(event);
+    this.ProductoSeleccionado = <ProductoInterface>{}
+    this.activarBotonAceptar = false;
+    Swal.close();
+  }
+
+  openModalConfirmarBorrar() {
+    setTimeout(() => {
+      console.log(this.ProductoSeleccionado)
+      this.display = "block";
+    }, 100);
+  }
+
+  onCancelBorrar() {
+    this.display = "none";
+  }
+  onCloseHandledConfirmarBorrar() {
+    this.productosService.borrarProducto(this.ProductoSeleccionado)
+    this.display = "none";
   }
 }

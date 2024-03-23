@@ -74,8 +74,13 @@ export class NuevoProductoComponent implements OnInit {
           Swal.fire({
             title: 'Código repetido',
             text: 'Ya existe un producto registrado con este código de barras. Por favor verifique.',
-            icon: 'warning'
+            icon: 'warning',
+            didClose: () => {
+              const codigoDeBarras= this.el.nativeElement.querySelector("#codigoDeBarras");
+              codigoDeBarras.focus();
+            }
           })
+          
          }
       } else {
         await this.productosService.crearProducto(this.formulario.value).then( docRef => {
@@ -83,10 +88,16 @@ export class NuevoProductoComponent implements OnInit {
           Swal.fire({
             title: this.formulario.controls['descripcion'].value,
             text: 'Se agregó correctamente',
-            icon: 'success'
+            icon: 'success',
+            timer: 1500,
+            didClose: () => {
+              this.formulario.reset();     
+              const codigoDeBarras= this.el.nativeElement.querySelector("#codigoDeBarras");
+              codigoDeBarras.focus();
+            }
           })
       
-          this.formulario.reset();
+             
         })
         .catch(e => console.log('Error: ', e));
       }
