@@ -9,6 +9,7 @@ import { ProductosComponent } from './pages/productos/productos.component';
 const routes: Routes = [
   { path: 'ventas'    , component: VentasComponent, canActivate: [AuthGuard] },
   { path: 'productos'    , component: ProductosComponent, canActivate: [AuthGuard] },
+  { path: 'productos/:id'    , component: ProductosComponent, canActivate: [AuthGuard] },
   { path: 'registro'  , component: RegistroComponent },
   { path: 'login'     , component: LoginComponent },
   { path: '**'  , redirectTo: 'ventas' }

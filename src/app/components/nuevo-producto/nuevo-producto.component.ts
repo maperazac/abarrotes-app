@@ -1,9 +1,12 @@
-import { Component, ElementRef, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormControl, FormGroup, NgForm, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import DepartamentoInterface from 'src/app/interfaces/deparamentos.interface';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
 import { BuscarProductoModel } from 'src/app/models/buscarProducto.model';
 import { ProductoModel } from 'src/app/models/producto.model';
+import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { ProductosService } from 'src/app/services/productos.service';
 import Swal from 'sweetalert2';
 
@@ -14,13 +17,20 @@ import Swal from 'sweetalert2';
 })
 export class NuevoProductoComponent implements OnInit {
 
-  // producto = new ProductoModel();
   @Input() esModificacion:boolean;
+  @Output()
+  botonSeleccionado = new EventEmitter<number>();
   buscarProducto = new BuscarProductoModel();
-
   formulario: FormGroup;
+  id: number;
+  private sub: any;
+  deptos: DepartamentoInterface[] = [];
 
-  constructor( private productosService: ProductosService, private el: ElementRef) {
+  constructor( private productosService: ProductosService, 
+               private el: ElementRef,
+               private route: ActivatedRoute,
+               private router: Router,
+               private departamentosService: DepartamentosService) {
     this.formulario = new FormGroup({
       // id: new FormControl(),
       codigoDeBarras: new FormControl(),
@@ -35,6 +45,32 @@ export class NuevoProductoComponent implements OnInit {
    }
 
   ngOnInit() {    
+    this.sub = this.route.params.subscribe(params => {
+      // debugger;
+      this.id = +params['id']; // (+) converts string 'id' to a number
+
+      if(!Number.isNaN(this.id)) {
+        this.esModificacion = true;
+        
+        this.buscarProducto.palabraClave = this.id.toString();
+
+        this.buscarProductoPorCodigoDeBaras();
+
+        setTimeout(() => {
+          this.botonSeleccionado.emit(2)
+        }, 100);
+      } else {
+        // setTimeout(() => {
+        //   this.botonSeleccionado.emit(1)
+        // }, 100);
+      }
+   });
+
+   this.obtenerDepartamentos();
+  }
+
+  ngOnDestroy() {
+    this.sub.unsubscribe();
   }
 
   ngAfterViewInit() {
@@ -228,5 +264,21 @@ export class NuevoProductoComponent implements OnInit {
     })
     .catch( e => console.log('error: ', e))
   }
+
+  obtenerDepartamentos () {
+    this.departamentosService.obtenerDepartamentos().then(docRef => {
+      const departamentos: any[] = [];
+
+      docRef.forEach ( producto => {
+        departamentos.push({
+          id: producto.id,
+          ...producto.data()
+        })
+      })
+
+      this.deptos=departamentos;
+    })
+  }
+
 
 }

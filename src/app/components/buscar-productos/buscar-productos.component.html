@@ -1,5 +1,6 @@
-<div class="text-left busqueda-container-dialog">
-    <h3>Búsqueda de artículos</h3>
+<div class="text-left busqueda-container-dialog animated fadeIn faster" [ngClass] = "!esVenta ? 'w-50  p-3' : ''">
+    <h4 *ngIf="esVenta">Búsqueda de productos</h4>
+    <h4 *ngIf="!esVenta">Eliminar productos</h4>
     <input type="text" disabled value={{ProductoSeleccionado?ProductoSeleccionado.codigoDeBarras:ProductoSeleccionado}} id="inputProductoSeleccionado">
     <div class="input-group mb-3">
       <div class="input-group-prepend">
@@ -10,19 +11,34 @@
     <div class="contenedor-tabla">
       <table class="table table-sm tabla-resultados-busqueda">
         <thead class="thead-dark">
-          <tr>
-            <th scope="col" style="width:40%">Descripción</th>
-            <th scope="col" style="width:20%">Precio venta</th>
-            <th scope="col" style="width:20%">Departamento</th>
-            <th scope="col" style="width:20%">Eliminar</th>
+          <tr *ngIf="esVenta">
+            <th scope="col" style="width:40%" class="text-center">Descripción</th>
+            <th scope="col" style="width:20%" class="text-center">Precio venta</th>
+            <th scope="col" style="width:20%" class="text-center">Departamento</th>
+            <th scope="col" style="width:20%" class="text-center">Acciones</th>
+          </tr>
+          <tr *ngIf="!esVenta">
+            <th scope="col" style="width:15%" class="text-center">Código</th>
+            <th scope="col" style="width:30%" class="text-center">Descripción</th>
+            <th scope="col" style="width:15%" class="text-center">Precio venta</th>
+            <th scope="col" style="width:20%" class="text-center">Departamento</th>
+            <th scope="col" style="width:20%" class="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody *ngIf="productosTemp.length > 0; else sinResultados">
           <tr *ngFor="let producto of productosTemp; let i = index" (click)="setProductoSeleccionado(producto)" [ngClass]="ProductoSeleccionado ? (ProductoSeleccionado.id == producto.id ? 'row-selected' : '') : ''">
+            <td *ngIf="!esVenta">{{ producto.codigoDeBarras }}</td>
             <td>{{ producto.descripcion }}</td>
-            <td>{{ producto.precioVenta | currency: '$' }}</td>
-            <td>{{ producto.departamento }}</td>
-            <td class="text-center" (click)="openModalConfirmarBorrar()"><i class="fa fa-trash"></i></td>
+            <td class="text-center">{{ producto.precioVenta | currency: '$' }}</td>
+            <td class="text-center">{{ producto.departamento }}</td>
+            <td class="text-center align-middle">
+              <button class="btn btn-sm btn-primary btn-outline-light mr-3" (click)="editarProducto()">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-danger btn-outline-light" (click)="openModalConfirmarBorrar()">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
           </tr>
         </tbody>
         <ng-template #sinResultados>
@@ -42,11 +58,11 @@
 
     
 
-    <div class="d-flex justify-content-between">
-      <button class="col-sm-5 btn btn-primary" (click) = "agregarProductoALaVenta($event)" [disabled]=!activarBotonAceptar>
+    <div class="d-flex justify-content-between" *ngIf="esVenta">
+      <button class="col-sm-5 btn btn-primary" (click) = "agregarProductoALaVenta()" [disabled]=!activarBotonAceptar>
         <i class="fa fa-check"></i> Aceptar
       </button>
-      <button (click)="cerrarBusqueda($event)" class="col-sm-5 btn btn-secondary">
+      <button (click)="cerrarBusqueda()" class="col-sm-5 btn btn-secondary">
         <i class="fa fa-times"></i> Cancelar
       </button>
     </div>

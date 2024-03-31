@@ -19,6 +19,7 @@ import { BuscarProductosComponent } from './components/buscar-productos/buscar-p
 import { ProductosNavbarComponent } from './components/productos-navbar/productos-navbar.component';
 import { NuevoProductoComponent } from './components/nuevo-producto/nuevo-producto.component';
 import { VentasFooterComponent } from './components/ventas-footer/ventas-footer.component';
+import { DepartamentosComponent } from './components/departamentos/departamentos.component';
 
 @NgModule({
   declarations: [
@@ -33,6 +34,7 @@ import { VentasFooterComponent } from './components/ventas-footer/ventas-footer.
     ProductosNavbarComponent,
     NuevoProductoComponent,
     VentasFooterComponent,
+    DepartamentosComponent,
   ],
   imports: [
     BrowserModule,

@@ -44,7 +44,7 @@
       <div class="radio-productos-venta"  [ngClass]="i % 2 === 0 ? 'even' : 'odd'">
         <label [for]=producto.codigoDeBarras class="form-check-label w-100">
           <label class="form-check-label text-center" [for]=producto.codigoDeBarras  style="width:15%; padding: .5rem; border-right: solid 1px #fff;">
-            <div class="d-flex overflow-hidden" style="text-wrap: nowrap;">{{producto.codigoDeBarras}}</div>
+            <div class="d-flex overflow-hidden" style="text-wrap: nowrap; place-content: center;">{{producto.codigoDeBarras}}</div>
           </label>
           <label class="form-check-label" [for]=producto.codigoDeBarras style="width:25%; padding: .5rem; border-right: solid 1px #fff;">
             <div class="d-flex overflow-hidden" style="text-wrap: nowrap;">{{producto.descripcion}}</div>
@@ -71,6 +71,6 @@
 
 <div style="display: none;"> 
   <div #myAlert>
-    <app-buscar-productos></app-buscar-productos>    
+    <app-buscar-productos [esVenta] = true></app-buscar-productos>    
   </div>
 </div>

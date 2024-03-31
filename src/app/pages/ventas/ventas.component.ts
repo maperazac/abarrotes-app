@@ -45,6 +45,15 @@ export class VentasComponent implements OnInit {
       this.restarCantidad(this.rowSelected); 
     }
 
+    if(event.code == 'Numpad0' || event.code == 'Numpad1' || event.code == 'Numpad2' || event.code == 'Numpad3'
+        || event.code == 'Numpad4' || event.code == 'Numpad5' || event.code == 'Numpad6' || event.code == 'Numpad7'
+        || event.code == 'Numpad8' || event.code == 'Numpad9') {  // Al presionar numeros, poner focus en el cuadro de codigo de barras
+      
+      // this.restarCantidad(this.rowSelected);
+      const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
+      inputPalabraClave.focus(); 
+    }
+
     // Usar para prevenir acciones combinadas como CTRL+P y poder usar comandos para controlar el sistema
     const {key, keyCode, metaKey, shiftKey, altKey, ctrlKey} = event; 
       if(key === "c" && (ctrlKey || metaKey)){  // EJEMPLO
@@ -173,7 +182,8 @@ export class VentasComponent implements OnInit {
           inputPalabraClave.focus();
         }
       });
-      if (formValues) {
+      console.log()
+      if (formValues && formValues[0] != '' && formValues[1] != '' && formValues[2] != '') {
         const nuevoProductoComun: ProductoInterface = {
           id: this.getRandomInt(1000000, 9999999).toString(),
           codigoDeBarras: "PC" + this.getRandomInt(1000000, 9999999).toString(),
@@ -188,6 +198,8 @@ export class VentasComponent implements OnInit {
         }
         this.productosVentaActual.push(nuevoProductoComun);
         this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+      } else {
+        // console.log("llene todos los campos")
       }
     }
 
@@ -222,10 +234,9 @@ export class VentasComponent implements OnInit {
         }).then(res=>{
           // NO BORRAR!!!!!!!!!!!!!!!!!! USAR PARA AGREGAR EL PRODUCTO SELECCIONADO A LA LISTA DE ARTICULOS PARA VENTA
           if(this.inputProductoSeleccionado.value != '') {
-            console.log("agregar a la venta: ", this.inputProductoSeleccionado.value)
             this.agregarProductoVentaActual(this.inputProductoSeleccionado.value)
           } else {
-            console.log("nada que agregar")
+            // console.log("nada que agregar")
           }
         })
     }
@@ -264,7 +275,7 @@ export class VentasComponent implements OnInit {
     } else {
       let elemento = (<HTMLInputElement>document.querySelector('input[name=exampleRadios]'))
       if(elemento){
-        elemento.focus()
+        elemento.click()
       }
     }
   }
@@ -362,4 +373,9 @@ export class VentasComponent implements OnInit {
       this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
     }    
   }
+
+  // editarProducto(codigoDeBarras: string) {
+  //   // this.router.navigate(['/productos', {id:codigoDeBarras} ]);
+  //   this.router.navigateByUrl('/productos/' + codigoDeBarras)
+  // }
 }
