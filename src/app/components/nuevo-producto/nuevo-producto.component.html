@@ -156,16 +156,34 @@
           <label class="col-form-label col-sm-2 text-right">Departamento</label>
           <label class="col-form-label col-sm-10">
             <div class="input-group">
-              <select #departamentos class="custom-select" id="inputGroupSelect01" (change)="setDepartamento(departamentos.value)" class="form-control"
+              <select #departamentos class="custom-select" id="departamentos" (change)="setDepartamento(departamentos.value)" class="form-control"
               formControlName="departamento"
               name="departamento" >
                 <option value="0" [selected]>- Sin departamento -</option>
                 <option *ngFor="let departamento of deptos; let i = index" [value]=departamento.id>{{ departamento.nombre }}</option>
+                <option value="-1">+ Agregar nuevo</option>
                 <!-- <option value="2">Bebidas</option>
                 <option value="3">Frutas y verduras</option> -->
               </select>
             </div>
           </label>
+
+
+          <div class="col-sm-10 offset-sm-2">
+            <input type="text"
+                    class="form-control"
+                    autocomplete="off"
+                    placeholder="Nombre de nuevo departamento"
+                    id="nuevoDepartamento"
+                    hidden>
+          </div>
+
+
+          
+        </div>
+
+        <div *ngIf="formularioInvalido" class="bg-danger text-white p-2 mb-2 rounded text-center">
+          Para continuar, debe llenar todos los campos del formulario.
         </div>
   
         <hr>

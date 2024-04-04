@@ -97,7 +97,7 @@ export class BuscarProductosComponent implements OnInit {
       } else {
         if (event.target.value.length >= 3) {
           this.productosTemp = this.productos.filter((obj) => {
-            return obj.descripcion.toLowerCase().includes(event.target.value.toLowerCase())
+            return obj.descripcion.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').includes(event.target.value.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''))
           })
         } else {
           this.productosTemp = this.productos;

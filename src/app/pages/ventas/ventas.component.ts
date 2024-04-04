@@ -37,6 +37,7 @@ export class VentasComponent implements OnInit {
 
     if(event.code == 'NumpadAdd') {  // + Para aumentar la cantidad de un producto en 1
       event.preventDefault();
+      console.log(this.rowSelected)
       this.agregarCantidad(this.rowSelected); 
     }
 
@@ -95,8 +96,9 @@ export class VentasComponent implements OnInit {
       inputPalabraClave.focus();
   }
 
-  selectRow(codigo: string) {
-    this.rowSelected = codigo;
+  selectRow(id: string) {
+    console.log(id)
+    this.rowSelected = id;
   }
 
   efectivoInicialRegistrado() {
@@ -124,8 +126,9 @@ export class VentasComponent implements OnInit {
         const efectivoInicial = efectivoInicialInput.value
         if (efectivoInicial == '') {
           Swal.showValidationMessage(`Introduce la cantidad de efectivo inicial`)
+        } else {
+          localStorage.setItem('efectivoInicialEnCaja', efectivoInicial);
         }
-        localStorage.setItem('efectivoInicialEnCaja', efectivoInicial);
       },
       didClose: () => {
         const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
@@ -153,7 +156,7 @@ export class VentasComponent implements OnInit {
         <div style="display: flex">
         <div style="width: 50%;">
           Cantidad: <br/>
-          <input type="number" id="cantidadProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
+          <input type="number" min="0" step="1" id="cantidadProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
         </div>
         <div style="width: 3%; display: flex; align-items: center; margin-top: 20px; margin-right: 2px;"><i class="fa fa-times"></i></div>
         
@@ -182,11 +185,10 @@ export class VentasComponent implements OnInit {
           inputPalabraClave.focus();
         }
       });
-      console.log()
       if (formValues && formValues[0] != '' && formValues[1] != '' && formValues[2] != '') {
         const nuevoProductoComun: ProductoInterface = {
           id: this.getRandomInt(1000000, 9999999).toString(),
-          codigoDeBarras: "PC" + this.getRandomInt(1000000, 9999999).toString(),
+          codigoDeBarras: '0',
           descripcion: formValues[0],
           seVende: 1,
           precioCosto: 0,
@@ -194,10 +196,11 @@ export class VentasComponent implements OnInit {
           precioVenta: formValues[2],
           precioMayoreo: formValues[2],
           departamento: "0",
-          cantidad: parseInt(formValues[1])
+          cantidad: parseFloat(formValues[1])
         }
         this.productosVentaActual.push(nuevoProductoComun);
         this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+        this.selectRow(nuevoProductoComun.id)
       } else {
         // console.log("llene todos los campos")
       }
@@ -298,7 +301,7 @@ export class VentasComponent implements OnInit {
         cantidad = parseInt(words[0]);
       }
     } 
-    await this.productosService.obtenerProductoPorCodigoDeBarras(codigo).then(docRef => {
+    await this.productosService.obtenerProductoPorCodigoDeBarras(codigo).then(async docRef => {
       const productos: any[] = [];
 
       docRef.forEach ( producto => {
@@ -311,7 +314,6 @@ export class VentasComponent implements OnInit {
 
       let productoRepetido = false;
       let item;
-
       if (productos.length == 0) {
         Swal.fire({
           title: 'Producto no encontrado',
@@ -323,21 +325,129 @@ export class VentasComponent implements OnInit {
           }
         })
       } else {
-        if (this.productosVentaActual.length !== 0) {
-          this.productosVentaActual.forEach(prod => {
-            if (prod.id == productos[0].id) {
-              item = this.productosVentaActual.findIndex(i => i.id === productos[0].id)
-              productoRepetido = true;
-              return;
-            } 
-          })
-
-          productoRepetido ? this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + cantidad : this.productosVentaActual.push(...productos);
-          
-        } else {
-          this.productosVentaActual.push(...productos)
+        if(productos[0].seVende == 1) { // Productos que se venden por pieza
+          if (this.productosVentaActual.length !== 0) {
+            this.productosVentaActual.forEach(prod => {
+              if (prod.id == productos[0].id) {
+                item = this.productosVentaActual.findIndex(i => i.id === productos[0].id)
+                productoRepetido = true;
+                return;
+              } 
+            })
+  
+            productoRepetido ? this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + cantidad : this.productosVentaActual.push(...productos);
+            
+          } else {
+            this.productosVentaActual.push(...productos)
+          }
         }
-        this.selectRow(productos[0].codigoDeBarras)
+
+        if (productos[0].seVende == 2) { // Productos que se venden a granel
+
+
+          // if (this.productosVentaActual.length !== 0) {
+          //   this.productosVentaActual.forEach(prod => {
+          //     if (prod.id == productos[0].id) {
+          //       item = this.productosVentaActual.findIndex(i => i.id === productos[0].id)
+          //       productoRepetido = true;
+          //       return;
+          //     } 
+          //   })
+  
+          //   productoRepetido ? this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + cantidad : this.productosVentaActual.push(...productos);
+            
+          // } else {
+          //   this.productosVentaActual.push(...productos)
+          // }
+
+
+
+          let cantidadProductoInput: HTMLInputElement; 
+          let importeInput: HTMLInputElement;
+
+          Swal.fire({
+            allowOutsideClick: false,
+            title: productos[0].descripcion,
+            html: `<div class="container ">
+                <div class="row">
+                  <div class="col-sm-6">
+                    Cantidad del producto: <br/>
+                    <input type="number" id="cantidad" class="swal2-input w-100" style="margin: 5px 0 !important">
+                  </div>
+                  <div class="col-sm-6">
+                    Importe actual: <br/>
+                    <input type="text" id="importe" disabled class="swal2-input w-100" style="margin: 5px 0 !important">
+                  </div>
+                  <div class="col-sm-12">
+                    <h3>Precio unitario: ` + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(productos[0].precioVenta) + `</h3>
+                  </div>
+                </div>
+              </div>
+            `,
+            focusConfirm: false,
+            allowEscapeKey: true,
+            confirmButtonText: 'Aceptar',
+            cancelButtonText: 'Cancelar',
+            showCancelButton: true,
+            didOpen: () => {
+              const popup = Swal.getPopup()!
+              importeInput = popup.querySelector('#importe') as HTMLInputElement
+              importeInput.value = '$'
+              cantidadProductoInput = popup.querySelector('#cantidad') as HTMLInputElement
+              cantidadProductoInput.onkeyup = (event) => {
+                if (event.key === 'Enter') {
+                  Swal.clickConfirm() 
+                } else {
+                  if (cantidadProductoInput.value != '') {
+                    importeInput.value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((parseFloat(cantidadProductoInput.value) * productos[0].precioVenta)).toString()
+                  } else importeInput.value = '$'
+                }
+              }
+              cantidadProductoInput.focus();
+            },
+            preConfirm: () => {
+              const cantidad = cantidadProductoInput.value
+              if (cantidad == '') {
+                Swal.showValidationMessage(`Introduce la cantidad de producto`)
+              } else {
+                if (this.productosVentaActual.length !== 0) {
+                  this.productosVentaActual.forEach(prod => {
+                    if (prod.id == productos[0].id) {
+                      item = this.productosVentaActual.findIndex(i => i.id === productos[0].id)
+                      productoRepetido = true;
+                      return;
+                    } 
+                  })
+        
+                  if (productoRepetido) {
+                    this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + parseFloat(cantidad)
+                  } else {
+                    productos[0].cantidad = parseFloat(cantidadProductoInput.value);
+                    this.productosVentaActual.push(...productos);  
+                  }
+                  
+                } else {
+                  productos[0].cantidad = parseFloat(cantidadProductoInput.value);
+                  this.productosVentaActual.push(...productos);
+                }
+
+                // productos[0].cantidad = parseFloat(cantidadProductoInput.value);
+                // this.productosVentaActual.push(...productos);
+              }
+            },
+            didClose: () => {
+              const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
+              inputCodigoDeProducto.focus();
+              this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+            }
+          })
+        }
+
+        if (productos[0].seVende == 3) { // Productos que se venden como paquete (kit)
+
+        }
+
+        this.selectRow(productos[0].id)
       }
       this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
 
@@ -351,26 +461,30 @@ export class VentasComponent implements OnInit {
     this.ventasService.$productosVentaActual.emit(this.productosVentaActual);
   }
 
-  restarCantidad(codigoDeBarras) {
-    let item = this.productosVentaActual.findIndex(i => i.codigoDeBarras === codigoDeBarras);
+  restarCantidad(id) {
+    let item = this.productosVentaActual.findIndex(i => i.id === id);
 
     if(item>-1) {
-      if(this.productosVentaActual[item].cantidad === 1) {
-        this.productosVentaActual.splice(item, 1)
-        this.rowSelected = '0'
-      } else {
-        this.productosVentaActual[item].cantidad -= 1;
+      if(this.productosVentaActual[item].seVende != 2) {  // Permitir decrementar solo cuando NO ES VENTA A GRANEL
+        if(this.productosVentaActual[item].cantidad <= 1) {
+          this.productosVentaActual.splice(item, 1)
+          this.rowSelected = '0'
+        } else {
+          this.productosVentaActual[item].cantidad -= 1;
+        }
+        this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
       }
-      this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
     }
-    
   }
 
-  agregarCantidad(codigoDeBarras) {
-    let item = this.productosVentaActual.findIndex(i => i.codigoDeBarras === codigoDeBarras);
+  agregarCantidad(id) {
+    console.log(id)
+    let item = this.productosVentaActual.findIndex(i => i.id === id);
     if(item>-1) {
-      this.productosVentaActual[item].cantidad += 1;
-      this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+      if(this.productosVentaActual[item].seVende != 2) {  // Permitir incrementar solo cuando NO ES VENTA A GRANEL
+        this.productosVentaActual[item].cantidad += 1;
+        this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+      }
     }    
   }
 

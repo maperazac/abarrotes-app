@@ -35,6 +35,7 @@ export class ProductosService {
   }
 
   modificarProducto(producto: ProductoInterface, id) {
+    // debugger;
     const productoDocRef = doc(this.firestore, `productos/${id}`);
     return updateDoc(productoDocRef, {
       codigoDeBarras: producto.codigoDeBarras,
@@ -46,5 +47,24 @@ export class ProductosService {
       precioMayoreo: producto.precioMayoreo,
       departamento: producto.departamento
     });
+  }
+
+  async actualizarDepartamentoEnProductos(id: string) {  // Cuando se borra un departamento, se tiene que actualizar todos los productos que tenian ese departamento y ponerles cero (sin departamento)
+    const q = query(this.productosCollectionRef, where("departamento", "==", id));
+    const querySnapshot = await getDocs(q);
+
+    const productos: any[] = [];
+
+    querySnapshot.forEach((doc) => {
+      productos.push({
+        id: doc.id,
+        ...doc.data(),
+        departamento: '0'
+      })
+    })
+
+    productos.forEach((producto) => {
+      this.modificarProducto(producto, producto.id)
+    })
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, query, orderBy, getDocs, where, doc, getDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, query, orderBy, getDocs, where, doc, getDoc, deleteDoc, updateDoc } from '@angular/fire/firestore';
 import DepartamentoInterface from '../interfaces/deparamentos.interface';
 
 @Injectable({
@@ -20,12 +20,31 @@ export class DepartamentosService {
   }
 
   async obtenerDepartamentosPorId(id: string)  {
-    // const q = await query(this.departamentosCollectionRef, where('id', "==", id))
-    // const departamento = await getDocs(q)
-    // return departamento;
-
-
     const docRef = doc(this.firestore, 'departamentos', id);
     return await getDoc(docRef);
   }
+
+  async obtenerDepartamentosPorNombre(nombre: string) {
+    const q = await query(this.departamentosCollectionRef, where('nombre', "==", nombre))
+    const departamento = await getDocs(q)
+    return departamento;
+  }
+
+  borrarDepartamento(id: string) {
+    const departamentoDocRef = doc(this.firestore, `departamentos/${id}`);
+    return deleteDoc(departamentoDocRef);
+  }
+  
+  modificarDepartamento(departamento: DepartamentoInterface, id) {
+    const departamentoDocRef = doc(this.firestore, `departamentos/${id}`);
+    return updateDoc(departamentoDocRef, {
+      nombre: departamento.nombre
+    });
+  }
+
+  // modificarDepartamento(id: string) {
+  //   const q = query(this.departamentosCollectionRef, where("departamento", "==", id));
+  //   const querySnapshot = await getDocs(q);
+  // }
+
 }

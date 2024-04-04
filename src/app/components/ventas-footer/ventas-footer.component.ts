@@ -19,13 +19,11 @@ export class VentasFooterComponent implements OnInit {
   ngOnInit(): void {
     this.ventasService.$productosVentaActual.subscribe((valor) => {
       this.productosVentaActual = valor;
-      // console.log(this.productosVentaActual = valor)
-      // console.log(valor)
       this.cantidadArticulos = 0;
       this.ventaTotalPesos = 0;
       this.productosVentaActual.map(item => {
-        // debugger;
-        this.cantidadArticulos += item.cantidad;
+        this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
+        // this.cantidadArticulos += item.cantidad;
         this.ventaTotalPesos += item.cantidad * item.precioVenta;
       })
     })
