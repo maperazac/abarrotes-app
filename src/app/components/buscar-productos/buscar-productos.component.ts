@@ -4,6 +4,7 @@ import { ProductoModel } from 'src/app/models/producto.model';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
+import { DepartamentosService } from 'src/app/services/departamentos.service';
 
 @Component({
   selector: 'app-buscar-productos',
@@ -37,7 +38,8 @@ export class BuscarProductosComponent implements OnInit {
   display = "none";
   activarBotonAceptar=false;
 
-  constructor(private productosService: ProductosService, 
+  constructor(private productosService: ProductosService,
+              private departamentosService: DepartamentosService,
               private el: ElementRef,
               private router: Router) { }
 
@@ -72,9 +74,12 @@ export class BuscarProductosComponent implements OnInit {
       const productos: any[] = [];
 
       docRef.forEach ( producto => {
-        productos.push({
-          id: producto.id,
-          ...producto.data()
+        this.departamentosService.obtenerDepartamentosPorId(producto.data()['departamento']).then (doc => {
+          productos.push({
+            id: producto.id,
+            ...producto.data(),
+            departamentoNombre: doc.data() != undefined ? doc.data()['nombre'] : '- Sin departamento -'
+          })
         })
       })
 

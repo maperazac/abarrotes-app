@@ -30,7 +30,7 @@
             <td *ngIf="!esVenta">{{ producto.codigoDeBarras }}</td>
             <td>{{ producto.descripcion }}</td>
             <td class="text-center">{{ producto.precioVenta | currency: '$' }}</td>
-            <td class="text-center">{{ producto.departamento }}</td>
+            <td class="text-center">{{ producto.departamentoNombre }}</td>
             <td class="text-center align-middle">
               <button class="btn btn-sm btn-primary btn-outline-light mr-3" (click)="editarProducto()">
                 <i class="fa fa-edit"></i>

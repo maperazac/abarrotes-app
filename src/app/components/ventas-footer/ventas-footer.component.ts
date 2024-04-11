@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
+import VentaInterface from 'src/app/interfaces/ventas.interface';
 import { VentasService } from 'src/app/services/ventas.service';
 
 @Component({
@@ -23,20 +24,9 @@ export class VentasFooterComponent implements OnInit {
       this.ventaTotalPesos = 0;
       this.productosVentaActual.map(item => {
         this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
-        // this.cantidadArticulos += item.cantidad;
         this.ventaTotalPesos += item.cantidad * item.precioVenta;
       })
     })
 
   }
-
-  // ngDoCheck() {
-  //   let changes = this.differ.find(this.productosVentaActual);
-  //   if (changes) {
-  //       console.log('Changes detected!');
-  //       this.productosVentaActual.map(item => this.cantidadArticulos += item.cantidad)
-  //       console.log(this.cantidadArticulos)
-  //       console.log(this.productosVentaActual)
-  //   }
-  // }
 }

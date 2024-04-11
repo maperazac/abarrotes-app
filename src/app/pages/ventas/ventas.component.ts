@@ -8,6 +8,7 @@ import ProductoInterface from 'src/app/interfaces/productos.interface';
 import { BuscarProductosComponent } from '../../components/buscar-productos/buscar-productos.component';
 import { Input } from '@angular/core';
 import { VentasService } from 'src/app/services/ventas.service';
+import VentaInterface from 'src/app/interfaces/ventas.interface';
 
 @Component({
   selector: 'app-ventas',
@@ -76,6 +77,7 @@ export class VentasComponent implements OnInit {
   botonSeleccionado = 0;
   busquedaInput: HTMLInputElement  
   inputProductoSeleccionado: HTMLInputElement 
+  ventas: VentaInterface[] = [];
 
   constructor(private auth: AuthService,
               private el: ElementRef,
@@ -88,12 +90,70 @@ export class VentasComponent implements OnInit {
 
   ngOnInit() {
     this.efectivoInicialRegistrado();
-    // console.log(this.modalRef)
+    this.obtenerVentasActivas()
+    
+
+    
   }
 
   ngAfterViewInit() {
       const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
       inputPalabraClave.focus();
+  }
+
+  obtenerVentasActivas() {
+    const ventas: any[] = [];
+    this.ventasService.obtenerVentas().then(docRef => {
+      docRef.forEach ( venta => {
+        console.log(venta.data()['status'])
+        if(venta.data()['status'] == 1) {
+          ventas.push({
+            id: venta.id,
+            ...venta.data()
+          })
+        }
+      })
+    })
+    // this.ventas = ventas;
+
+    if(ventas.length == 0) {
+      let nuevaVenta = {
+        id: '',
+        fecha: new Date(),
+        totalVenta: '0',
+        totalArticulos: '0',
+        tipoPago: 0,
+        totalPagadoEfectivo: '0',
+        totalPagadoCredito: '0',
+        cambio: '0',
+        idCliente: '0',
+        pagoCon: '0',
+        idCajero: '0',
+        status: '1',
+        seleccionada: 1
+      }
+      this.ventasService.crearVenta(nuevaVenta).then(doc => {
+        console.log(this.ventas)
+        this.ventas.push({
+          id: doc.id,
+          fecha: new Date(),
+          totalVenta: '0',
+          totalArticulos: '0',
+          tipoPago: 0,
+          totalPagadoEfectivo: '0',
+          totalPagadoCredito: '0',
+          cambio: '0',
+          idCliente: '0',
+          pagoCon: '0',
+          idCajero: '0',
+          status: '1',
+          seleccionada: 1
+        });
+        console.log(this.ventas);
+      })
+    } else {
+      this.ventas = ventas;
+    }
   }
 
   selectRow(id: string) {

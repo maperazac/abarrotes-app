@@ -9,4 +9,5 @@ export default interface ProductoInterface {
     precioMayoreo: number;
     departamento: string;
     cantidad?: number;
+    departamentoNombre?: string;
 }
