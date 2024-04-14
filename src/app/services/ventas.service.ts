@@ -12,7 +12,9 @@ export class VentasService {
 
   $productosVentaActual = new EventEmitter<ProductoInterface[]>();
 
-  crearVenta(venta: VentaInterface) {
+  $ventasActuales = new EventEmitter<VentaInterface[]>();
+
+  guardarVenta(venta: VentaInterface) {
     return addDoc(this.ventasCollectionRef, venta);
   }
 
@@ -20,5 +22,22 @@ export class VentasService {
     const q = query(this.ventasCollectionRef, orderBy('fecha'))
     const dep = await getDocs(q)
     return dep;
+  }
+
+  agregarVentaLocalstorage(venta: VentaInterface) {
+    debugger;
+    let ventas: VentaInterface[] = []; 
+    const ventasActuales = JSON.parse(localStorage.getItem("ventasLS")); // obtiene lo que hay actualmente en el localstorage de ventas, en caso de que ya haya ventas.
+    
+    if(ventasActuales != null) {
+      ventasActuales.push(venta); // Si ya habia algo en el localstorage, le agrega la nueva venta al array de ventas
+      localStorage.setItem("ventasLS", JSON.stringify(ventasActuales)); // Actualiza el localstorage con la nueva venta agregada
+    } else {
+      ventas.push(venta);
+      localStorage.setItem("ventasLS", JSON.stringify(ventas));
+    }
+
+    this.$ventasActuales.emit(JSON.parse(localStorage.getItem("ventasLS")))
+
   }
 }

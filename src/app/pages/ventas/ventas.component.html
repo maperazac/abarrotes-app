@@ -26,6 +26,26 @@
       </div>
     </form>
   </div> -->
+
+
+  <ul class="nav nav-tabs">
+    <!-- <li class="nav-item">
+      <a class="nav-link active" href="#"><i class="fa fa-bookmark"></i> Ticket 1</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#"><i class="fa fa-bookmark"></i> Ticket 2</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#">Link</a>
+    </li> -->
+
+    <li class="nav-item" *ngFor="let venta of ventas; let i = index">
+      <a class="nav-link" [ngClass]="i == 0 ? 'active' : ''" href="#"><i class="fa fa-bookmark"></i> Ticket {{ i + 1}}</a>
+    </li>
+  </ul>
+
+
+
   <table class="table mb-0">
     <thead class="thead-light">
       <tr>
@@ -38,7 +58,7 @@
       </tr>
     </thead>
   </table>
-  <div style="height: calc(100vh - 451px); overflow-y: auto; border-bottom: solid 1px gainsboro;">
+  <div style="height: calc(100vh - 495px); overflow-y: auto; border-bottom: solid 1px gainsboro;">
     <div *ngFor="let producto of productosVentaActual; let i = index" class="animated fadeIn faster">
       <input (change)="selectRow(producto.id)" class="form-check-input" type="radio" name="exampleRadios" [id]=producto.id [value]=producto.id checked>
       <div class="radio-productos-venta"  [ngClass]="i % 2 === 0 ? 'even' : 'odd'">

@@ -92,7 +92,16 @@ export class VentasComponent implements OnInit {
     this.efectivoInicialRegistrado();
     this.obtenerVentasActivas()
     
-
+    this.ventasService.$ventasActuales.subscribe((valor) => {
+      this.ventas = valor;
+      // this.productosVentaActual = valor;
+      // this.cantidadArticulos = 0;
+      // this.ventaTotalPesos = 0;
+      // this.productosVentaActual.map(item => {
+      //   this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
+      //   this.ventaTotalPesos += item.cantidad * item.precioVenta;
+      // })
+    })
     
   }
 
@@ -101,56 +110,35 @@ export class VentasComponent implements OnInit {
       inputPalabraClave.focus();
   }
 
-  obtenerVentasActivas() {
-    const ventas: any[] = [];
-    this.ventasService.obtenerVentas().then(docRef => {
-      docRef.forEach ( venta => {
-        console.log(venta.data()['status'])
-        if(venta.data()['status'] == 1) {
-          ventas.push({
-            id: venta.id,
-            ...venta.data()
-          })
-        }
-      })
-    })
-    // this.ventas = ventas;
-
-    if(ventas.length == 0) {
+  async obtenerVentasActivas() {
+    const ventas: VentaInterface[] = JSON.parse(localStorage.getItem("ventasLS"))
+    //  await this.ventasService.obtenerVentas().then(docRef => {
+    //   docRef.forEach ( venta => {
+    //     if(venta.data()['status'] == 0) {
+    //       ventas.push({
+    //         id: venta.id,
+    //         ...venta.data()
+    //       })
+    //     }
+    //   })
+    // })
+    debugger;
+    if(ventas == null || ventas.length == 0) {
       let nuevaVenta = {
-        id: '',
         fecha: new Date(),
         totalVenta: '0',
         totalArticulos: '0',
-        tipoPago: 0,
+        tipoPago: 1,
         totalPagadoEfectivo: '0',
         totalPagadoCredito: '0',
         cambio: '0',
-        idCliente: '0',
         pagoCon: '0',
         idCajero: '0',
         status: '1',
         seleccionada: 1
       }
-      this.ventasService.crearVenta(nuevaVenta).then(doc => {
-        console.log(this.ventas)
-        this.ventas.push({
-          id: doc.id,
-          fecha: new Date(),
-          totalVenta: '0',
-          totalArticulos: '0',
-          tipoPago: 0,
-          totalPagadoEfectivo: '0',
-          totalPagadoCredito: '0',
-          cambio: '0',
-          idCliente: '0',
-          pagoCon: '0',
-          idCajero: '0',
-          status: '1',
-          seleccionada: 1
-        });
-        console.log(this.ventas);
-      })
+      this.ventasService.agregarVentaLocalstorage(nuevaVenta)
+      this.ventas.push(nuevaVenta);
     } else {
       this.ventas = ventas;
     }
@@ -516,7 +504,7 @@ export class VentasComponent implements OnInit {
 
   borrarProductoVentaActual(codigo) {
     this.productosVentaActual.forEach((item, index) => {
-      if (item.codigoDeBarras === codigo) this.productosVentaActual.splice(index, 1);
+      if (item.id === codigo) this.productosVentaActual.splice(index, 1);
     })
     this.ventasService.$productosVentaActual.emit(this.productosVentaActual);
   }

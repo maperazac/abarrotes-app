@@ -61,3 +61,32 @@ input[type="radio"]:checked+.radio-productos-venta, input[type="radio"]:checked+
     color: inherit;
     font-size: 1.125em;
 }
+
+.nav.nav-tabs {
+    background-color: #c9c9c9;
+    padding: 1px 5px 0 5px;
+    .nav-item {
+        .nav-link {
+            background-color: #dddddd;
+            color: #7c7c7c;
+            // border: solid 1px red;
+            margin-right: 1px;
+            margin-top: 5px;
+        }
+        .active {
+            background-color: #e9ecef;
+            border-bottom: solid 1px #e9ecef;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-weight: 600;
+            color: #000;
+            padding-top: 13px;
+            margin-top: 0px;
+        }
+    }
+} 
+
+.table th {
+    border: none;
+}

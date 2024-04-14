@@ -27,6 +27,22 @@ export class VentasFooterComponent implements OnInit {
         this.ventaTotalPesos += item.cantidad * item.precioVenta;
       })
     })
+  }
 
+  crearNuevaVenta() {
+    let nuevaVenta = {
+      fecha: new Date(),
+      totalVenta: '0',
+      totalArticulos: '0',
+      tipoPago: 1,
+      totalPagadoEfectivo: '0',
+      totalPagadoCredito: '0',
+      cambio: '0',
+      pagoCon: '0',
+      idCajero: '0',
+      status: '1',
+      seleccionada: 1
+    }
+    this.ventasService.agregarVentaLocalstorage(nuevaVenta)
   }
 }
