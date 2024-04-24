@@ -1,5 +1,6 @@
 export default interface VentaInterface {
     id?: string;
+    idTemp?: number;
     fecha: Date;
     totalVenta: string;
     totalArticulos: string;
@@ -12,4 +13,5 @@ export default interface VentaInterface {
     idCajero: string; // registrar el id del cajero que estaba logueado cuando se registró esta venta
     status: string; // el id de status de la venta (0 = en curso, 1 = completada, 2 = cancelada) Crear una tabla con los status de las ventas.
     seleccionada?: number; // indica con el 1 la venta que esta en pantalla al momento de cambiarse de pestañas, al volver a "ventas" se va a mostrar la venta que estaba. Al guardar la venta, este campo no se manda
+    posicion?: string; // Es el orden o posicion en que se muestra cada tab en la interfaz. Sirve para que cuando se elimine un tab, las demas conserven su nombre de tab, usando el orden en el que fueron creadas.
 }

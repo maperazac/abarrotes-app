@@ -14,6 +14,8 @@ export class VentasService {
 
   $ventasActuales = new EventEmitter<VentaInterface[]>();
 
+  $idVentaActiva = new EventEmitter<number>();
+
   guardarVenta(venta: VentaInterface) {
     return addDoc(this.ventasCollectionRef, venta);
   }
@@ -25,19 +27,57 @@ export class VentasService {
   }
 
   agregarVentaLocalstorage(venta: VentaInterface) {
-    debugger;
     let ventas: VentaInterface[] = []; 
     const ventasActuales = JSON.parse(localStorage.getItem("ventasLS")); // obtiene lo que hay actualmente en el localstorage de ventas, en caso de que ya haya ventas.
     
     if(ventasActuales != null) {
+      ventasActuales.forEach(element => {
+        element.seleccionada = 0;
+      });
+      venta.posicion = (ventasActuales.length + 1).toString();
       ventasActuales.push(venta); // Si ya habia algo en el localstorage, le agrega la nueva venta al array de ventas
       localStorage.setItem("ventasLS", JSON.stringify(ventasActuales)); // Actualiza el localstorage con la nueva venta agregada
     } else {
+      venta.posicion = '1';
       ventas.push(venta);
       localStorage.setItem("ventasLS", JSON.stringify(ventas));
     }
 
-    this.$ventasActuales.emit(JSON.parse(localStorage.getItem("ventasLS")))
+    this.$ventasActuales.emit(JSON.parse(localStorage.getItem("ventasLS")));
+  }
 
+  eliminarVentaLocalStorage(idTemp: number) {
+    const ventasActuales = JSON.parse(localStorage.getItem("ventasLS"));
+    let item = ventasActuales.findIndex(i => i.idTemp === idTemp)
+    ventasActuales.forEach((venta, index) => {
+      if(index == item - 1) {
+        venta.seleccionada = 1;
+      }
+    })
+
+    let ventasActualesFiltradas = ventasActuales.filter(function(el) { return el.idTemp != idTemp; })
+    localStorage.setItem("ventasLS", JSON.stringify(ventasActualesFiltradas));
+    this.$ventasActuales.emit(JSON.parse(localStorage.getItem("ventasLS")));
+  }
+
+  obtenerVentaActivaLocalStorage() {
+    const ventasActuales = JSON.parse(localStorage.getItem("ventasLS"));
+    let ventaActiva;
+    ventasActuales.forEach(element => {
+      if(element.seleccionada == 1) {
+        ventaActiva = element.idTemp;
+      } 
+    });
+    return ventaActiva;
+  }
+
+  setVentaActiva(id: number) {
+    const ventasActuales = JSON.parse(localStorage.getItem("ventasLS"));
+    ventasActuales.forEach(el => {
+      el.seleccionada = el.idTemp == id ? 1 : 0;
+    });
+    localStorage.setItem("ventasLS", JSON.stringify(ventasActuales));
+    this.$ventasActuales.emit(JSON.parse(localStorage.getItem("ventasLS")));
+    this.$idVentaActiva.emit(id)
   }
 }

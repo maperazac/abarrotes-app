@@ -23,33 +23,37 @@ export class VentasComponent implements OnInit {
     console.log(event.code)
     if(event.code == 'F10') {  // F10  para abrir popup de busqueda de productos
       event.preventDefault();
-      this.procesarEvento(3);
+      if (this.idVentaActiva) this.procesarEvento(3);
+    }
+
+    if(event.code == 'F6') {  // F6 para iniciar una nueva venta
+      event.preventDefault();
+      this.crearNuevaVenta();
     }
 
     if(event.code == 'Delete') {  // DEL para borrar elemento seleccionado de la venta actual
       event.preventDefault();
-      this.procesarEvento(7); 
+      if (this.idVentaActiva) this.procesarEvento(7); 
     }
 
-    if(event.code == 'ArrowUp' || event.code == 'ArrowDown') {  // Flecha arriba para navegacion en la tabla de productos en venta actual
+    if((event.code == 'ArrowUp' || event.code == 'ArrowDown') && this.idVentaActiva) {  // Flecha arriba para navegacion en la tabla de productos en venta actual
       // event.preventDefault();
       this.navegacionConFlechas(); 
     }
 
     if(event.code == 'NumpadAdd') {  // + Para aumentar la cantidad de un producto en 1
       event.preventDefault();
-      console.log(this.rowSelected)
-      this.agregarCantidad(this.rowSelected); 
+      if (this.idVentaActiva) this.agregarCantidad(this.rowSelected); 
     }
 
     if(event.code == 'NumpadSubtract') {  // - Para disminuir la cantidad de un producto en 1
       event.preventDefault();
-      this.restarCantidad(this.rowSelected); 
+      if (this.idVentaActiva) this.restarCantidad(this.rowSelected); 
     }
 
-    if(event.code == 'Numpad0' || event.code == 'Numpad1' || event.code == 'Numpad2' || event.code == 'Numpad3'
+    if((event.code == 'Numpad0' || event.code == 'Numpad1' || event.code == 'Numpad2' || event.code == 'Numpad3'
         || event.code == 'Numpad4' || event.code == 'Numpad5' || event.code == 'Numpad6' || event.code == 'Numpad7'
-        || event.code == 'Numpad8' || event.code == 'Numpad9') {  // Al presionar numeros, poner focus en el cuadro de codigo de barras
+        || event.code == 'Numpad8' || event.code == 'Numpad9')  && this.idVentaActiva) {  // Al presionar numeros, poner focus en el cuadro de codigo de barras
       
       // this.restarCantidad(this.rowSelected);
       const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
@@ -65,7 +69,7 @@ export class VentasComponent implements OnInit {
 
       if((key === "P" || key === "p") && (ctrlKey || metaKey)){ // CTRL+P  Para abrir popup de producto común
         event.preventDefault();
-        this.procesarEvento(2);
+        if (this.idVentaActiva) this.procesarEvento(2);
       }
   }
 
@@ -78,6 +82,7 @@ export class VentasComponent implements OnInit {
   busquedaInput: HTMLInputElement  
   inputProductoSeleccionado: HTMLInputElement 
   ventas: VentaInterface[] = [];
+  idVentaActiva: number;
 
   constructor(private auth: AuthService,
               private el: ElementRef,
@@ -102,7 +107,11 @@ export class VentasComponent implements OnInit {
       //   this.ventaTotalPesos += item.cantidad * item.precioVenta;
       // })
     })
-    
+
+    this.ventasService.$idVentaActiva.subscribe((id) => {
+      this.idVentaActiva = id;
+      // console.log("Venta activa:" ,this.idVentaActiva)
+    })    
   }
 
   ngAfterViewInit() {
@@ -112,19 +121,9 @@ export class VentasComponent implements OnInit {
 
   async obtenerVentasActivas() {
     const ventas: VentaInterface[] = JSON.parse(localStorage.getItem("ventasLS"))
-    //  await this.ventasService.obtenerVentas().then(docRef => {
-    //   docRef.forEach ( venta => {
-    //     if(venta.data()['status'] == 0) {
-    //       ventas.push({
-    //         id: venta.id,
-    //         ...venta.data()
-    //       })
-    //     }
-    //   })
-    // })
-    debugger;
     if(ventas == null || ventas.length == 0) {
       let nuevaVenta = {
+        idTemp: this.getRandomInt(1000000, 9999999),
         fecha: new Date(),
         totalVenta: '0',
         totalArticulos: '0',
@@ -139,14 +138,19 @@ export class VentasComponent implements OnInit {
       }
       this.ventasService.agregarVentaLocalstorage(nuevaVenta)
       this.ventas.push(nuevaVenta);
+      // this.idVentaActiva = nuevaVenta.idTemp;
+      this.seleccionarComoVentaActiva(nuevaVenta.idTemp)
     } else {
       this.ventas = ventas;
+      this.ventas.forEach(el => {
+        if (el.seleccionada) this.seleccionarComoVentaActiva(el.idTemp)
+      })
     }
   }
 
   selectRow(id: string) {
-    console.log(id)
     this.rowSelected = id;
+    console.log("ROW SELECTED: ", this.rowSelected)
   }
 
   efectivoInicialRegistrado() {
@@ -192,7 +196,7 @@ export class VentasComponent implements OnInit {
 
     // -----------------------------------------------------------------
 
-    if(id == 2) {  // Articulo común
+    if(id == 2) {  // Producto común
       const { value: formValues } = await Swal.fire({
         title: 'Producto común',
         html: `
@@ -356,6 +360,7 @@ export class VentasComponent implements OnInit {
         productos.push({
           id: producto.id,
           cantidad: cantidad,
+          ventaId: this.idVentaActiva,
           ...producto.data()
         })
       })
@@ -374,10 +379,10 @@ export class VentasComponent implements OnInit {
         })
       } else {
         if(productos[0].seVende == 1) { // Productos que se venden por pieza
-          if (this.productosVentaActual.length !== 0) {
+          if (this.productosVentaActual.filter(p => p.ventaId == this.idVentaActiva).length !== 0) {  // Si ya existen articulos en la venta activa actual
             this.productosVentaActual.forEach(prod => {
-              if (prod.id == productos[0].id) {
-                item = this.productosVentaActual.findIndex(i => i.id === productos[0].id)
+              if (prod.id == productos[0].id && prod.ventaId == this.idVentaActiva) {
+                item = this.productosVentaActual.findIndex(i => i.id === productos[0].id && i.ventaId == this.idVentaActiva)
                 productoRepetido = true;
                 return;
               } 
@@ -498,6 +503,7 @@ export class VentasComponent implements OnInit {
         this.selectRow(productos[0].id)
       }
       this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+      console.log(this.productosVentaActual)
 
     }).catch( e => console.log('error: ', e))
   }
@@ -510,7 +516,7 @@ export class VentasComponent implements OnInit {
   }
 
   restarCantidad(id) {
-    let item = this.productosVentaActual.findIndex(i => i.id === id);
+    let item = this.productosVentaActual.findIndex(i => i.id === id && i.ventaId == this.idVentaActiva);
 
     if(item>-1) {
       if(this.productosVentaActual[item].seVende != 2) {  // Permitir decrementar solo cuando NO ES VENTA A GRANEL
@@ -527,7 +533,7 @@ export class VentasComponent implements OnInit {
 
   agregarCantidad(id) {
     console.log(id)
-    let item = this.productosVentaActual.findIndex(i => i.id === id);
+    let item = this.productosVentaActual.findIndex(i => i.id === id && i.ventaId == this.idVentaActiva);
     if(item>-1) {
       if(this.productosVentaActual[item].seVende != 2) {  // Permitir incrementar solo cuando NO ES VENTA A GRANEL
         this.productosVentaActual[item].cantidad += 1;
@@ -536,8 +542,39 @@ export class VentasComponent implements OnInit {
     }    
   }
 
+  seleccionarComoVentaActiva(idTemp: number) {
+    this.ventasService.setVentaActiva(idTemp);
+    this.idVentaActiva = idTemp;
+
+    // CUANDO SE CAMBIA LA PESTAÑA A OTRA VENTA, TENGO QUE SELECCIONAR MARCAR COMO SELECCIONADO EL PRIMER PRODUCTO DE LA VENTA QUE SE ABRE.
+    let prodVentaActual = this.productosVentaActual.filter(v => v.ventaId == idTemp)
+    if(prodVentaActual.length > 0) {
+      this.selectRow(prodVentaActual[0].id)
+    }
+    // this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+  }
+
   // editarProducto(codigoDeBarras: string) {
   //   // this.router.navigate(['/productos', {id:codigoDeBarras} ]);
   //   this.router.navigateByUrl('/productos/' + codigoDeBarras)
   // }
+
+  crearNuevaVenta() {
+    let nuevaVenta = {
+      idTemp: this.getRandomInt(1000000, 9999999),
+      fecha: new Date(),
+      totalVenta: '0',
+      totalArticulos: '0',
+      tipoPago: 1,
+      totalPagadoEfectivo: '0',
+      totalPagadoCredito: '0',
+      cambio: '0',
+      pagoCon: '0',
+      idCajero: '0',
+      status: '1',
+      seleccionada: 1
+    }
+    this.ventasService.agregarVentaLocalstorage(nuevaVenta);
+    this.ventasService.$idVentaActiva.emit(nuevaVenta.idTemp);
+  }
 }

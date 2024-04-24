@@ -3,9 +3,17 @@ hr {
 }
 
 .functionKeys {
-    // background-color: gainsboro;
+    // padding: 3px 5px;
+    // margin-right: 10px;
+    // border-radius: 5px;
+    // border: solid 1px;
     padding: 3px 5px;
-    margin-right: 10px;
+    margin-right: 5px;
     border-radius: 5px;
     border: solid 1px;
+    box-shadow: inset 0 0 4px #333333;
+    border-color: #fff;
+    background-color: #a09f9f;
+    color: #fff;
+    font-weight: 700;
 }
