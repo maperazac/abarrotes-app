@@ -1,0 +1,27 @@
+<h4>Cambiar venta</h4>
+<input type="text" id="inputVentaActiva" #inputVentaActiva [value]="ventaSeleccionada" style="opacity: 0;">
+<div *ngFor="let venta of ventasActuales; let i = index" class="animated fadeIn faster">
+    <input (change)="seleccionarVenta(venta.idTemp)" class="form-check-input" type="radio" name="ventasRadioSelect" [id]=venta.idTemp [value]=venta.idTemp [checked]="venta.idTemp == ventaSeleccionada">
+
+    <div class="radio-productos-venta"  [ngClass]="i % 2 === 0 ? 'even' : 'odd'">
+        <label [for]=venta.idTemp class="form-check-label w-100">
+          <label class="form-check-label text-center" [for]=venta.idTemp  style="width:100%; padding: .5rem;">
+            <div class="d-flex overflow-hidden" style="text-wrap: nowrap; place-content: center; align-items: baseline;"><i class="fa fa-ticket" style="margin-right: 2px;"></i>  {{venta.idTemp}}</div>
+          </label>
+          <!-- <label class="form-check-label" [for]=venta.idTemp style="width:25%; padding: .5rem; border-right: solid 1px #fff;">
+            <div class="d-flex overflow-hidden" style="text-wrap: nowrap;">{{venta.descripcion}}</div>
+          </label>
+          <label class="form-check-label text-center" [for]=venta.idTemp style="width:15%; padding: .5rem; border-right: solid 1px #fff;">{{venta.precioVenta | currency: '$'}}</label>
+          <label class="form-check-label" [for]=venta.idTemp style="width:15%; padding: 0 .5rem;">
+            <div class="btn-group-sm d-flex justify-content-between" role="group">
+              <button tabindex="-1" type="button" class="btn btn-secondary btn-outline-light" [disabled] = "venta.seVende == 2" (click)="restarCantidad(venta.idTemp)"><i class="fa fa-minus"></i></button>
+              <button tabindex="-1" type="button" class="btnCantidad">{{venta.cantidad | number: venta.seVende == 2 ? '1.3' : '1.0'}}</button>
+              <button tabindex="-1" type="button" class="btn btn-secondary btn-outline-light" [disabled] = "venta.seVende == 2" (click)="agregarCantidad(venta.idTemp)"><i class="fa fa-plus"></i></button>
+            </div>
+          </label>
+          <label class="form-check-label text-right" [for]=venta.idTemp style="width:15%; padding: .5rem; border-right: solid 1px #fff;  border-left: solid 1px #fff;">
+            <strong>{{venta.precioVenta * venta.cantidad | currency: '$'}}</strong>
+          </label> -->
+        </label>
+      </div>
+</div>

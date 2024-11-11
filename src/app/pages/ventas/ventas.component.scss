@@ -5,7 +5,105 @@
     }
 }
 
-.table-hover tbody .row-selected:hover {
+// .table-hover tbody .row-selected:hover {
+//     color: #fff;
+//     background-color: #7bbafd !important;
+// }
+
+.radio-productos-venta {
+    border-top: 1px solid #dee2e6;
+    display: block;
+    min-height: 1.5rem;
+    // padding-left: 1.5em;
+
+    // padding: 0.5rem;
+    .form-check-input{
+        opacity: 1;
+    }
+    // label {
+    //     margin: .2rem;
+    // }
+}
+
+.form-check-label span {
+    padding: 0.5rem;
+    border-right: solid 1px #fff;
+}
+
+.radio-productos-venta.even {
+    background-color: #f3f3f348;
+}
+
+.radio-productos-venta.odd {
+    background-color: #0000000d;
+}
+
+input[type="radio"]:checked {
+    .radio-productos-venta {
+        background-color:red;
+    }
+}
+
+input[type="radio"]:checked+.radio-productos-venta, input[type="radio"]:checked+.radio-productos-venta div .btnCantidad {
+    background-color: #0c7bff;
     color: #fff;
-    background-color: #7bbafd !important;
+    // padding-bottom: 0.5rem;
+}
+
+.input-modales {
+    box-sizing: border-box;
+    width: auto;
+    transition: border-color .1s,box-shadow .1s;
+    border: 1px solid #d9d9d9;
+    border-radius: 0.1875em;
+    background: rgba(0,0,0,0);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.06), 0 0 0 3px rgba(0,0,0,0);
+    color: inherit;
+    font-size: 1.125em;
+}
+
+.nav.nav-tabs {
+    background-color: #c9c9c9;
+    padding: 1px 5px 0 5px;
+    .nav-item {
+        cursor: pointer;
+        .nav-link {
+            background-color: #dddddd;
+            color: #7c7c7c;
+            // border: solid 1px red;
+            margin-right: 1px;
+            margin-top: 5px;
+        }
+        .active {
+            background-color: #e9ecef;
+            border-bottom: solid 1px #e9ecef;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-weight: 600;
+            color: #000;
+            padding-top: 13px;
+            margin-top: 0px;
+        }
+    }
+} 
+
+.table th {
+    border: none;
+}
+
+.functionKeys {
+    padding: 3px 5px;
+    margin-right: 5px;
+    border-radius: 5px;
+    border: solid 1px;
+    box-shadow: inset 0 0 4px #333333;
+    border-color: #fff;
+    background-color: #a09f9f;
+    color: #fff;
+    font-weight: 700;
+}
+
+.sin-ventas {
+    background-color: #c9c9c9;
 }

@@ -5,10 +5,13 @@ import { RegistroComponent } from './pages/registro/registro.component';
 import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ProductosComponent } from './pages/productos/productos.component';
+import { ConfiguracionComponent } from './pages/configuracion/configuracion.component';
 
 const routes: Routes = [
   { path: 'ventas'    , component: VentasComponent, canActivate: [AuthGuard] },
   { path: 'productos'    , component: ProductosComponent, canActivate: [AuthGuard] },
+  { path: 'configuracion'    , component: ConfiguracionComponent, canActivate: [AuthGuard] },
+  { path: 'productos/:id'    , component: ProductosComponent, canActivate: [AuthGuard] },
   { path: 'registro'  , component: RegistroComponent },
   { path: 'login'     , component: LoginComponent },
   { path: '**'  , redirectTo: 'ventas' }

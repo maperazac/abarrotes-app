@@ -14,7 +14,6 @@ export class ProductosService {
   constructor(private firestore: Firestore,  private http: HttpClient) { }
 
   crearProducto(producto: ProductoInterface) {
-    console.log("formulario nuevo producto, en el servicio: ", producto)
     return addDoc(this.productosCollectionRef, producto);
   }
 
@@ -23,9 +22,11 @@ export class ProductosService {
     const producto = await getDocs(q)
     return producto;
   }
-  
-  obtenerProductos(): Observable<ProductoInterface[]> {
-    return collectionData(this.productosCollectionRef, { idField: 'id' }) as Observable<ProductoInterface[]>;
+
+  async obtenerProductos() {
+    const q = query(this.productosCollectionRef, orderBy('descripcion'))
+    const prod = await getDocs(q)
+    return prod;
   }
 
   borrarProducto(producto: ProductoInterface) {
@@ -34,7 +35,7 @@ export class ProductosService {
   }
 
   modificarProducto(producto: ProductoInterface, id) {
-    console.log("formulario editar, en servicio: ", producto)
+    // debugger;
     const productoDocRef = doc(this.firestore, `productos/${id}`);
     return updateDoc(productoDocRef, {
       codigoDeBarras: producto.codigoDeBarras,
@@ -46,5 +47,24 @@ export class ProductosService {
       precioMayoreo: producto.precioMayoreo,
       departamento: producto.departamento
     });
+  }
+
+  async actualizarDepartamentoEnProductos(id: string) {  // Cuando se borra un departamento, se tiene que actualizar todos los productos que tenian ese departamento y ponerles cero (sin departamento)
+    const q = query(this.productosCollectionRef, where("departamento", "==", id));
+    const querySnapshot = await getDocs(q);
+
+    const productos: any[] = [];
+
+    querySnapshot.forEach((doc) => {
+      productos.push({
+        id: doc.id,
+        ...doc.data(),
+        departamento: '0'
+      })
+    })
+
+    productos.forEach((producto) => {
+      this.modificarProducto(producto, producto.id)
+    })
   }
 }

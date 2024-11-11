@@ -1,0 +1,36 @@
+
+<div class="row bg-light" style="--bs-gutter-x: 0 !important; border-top: solid 1px gainsboro;">
+    <div class="col col-10 d-flex justify-content-between p-3">
+        <div>
+            <div>
+                
+                <h3><i class="fa fa-shopping-basket"></i> {{cantidadArticulos}} Productos en la venta actual.</h3>
+            </div>
+            <div class="d-flex">
+                <button tabindex="-1" class="btn btn-outline-secondary mr-2" [disabled]="idVentaActiva == 0 || ventasActuales.length <= 1" (click)="mostrarListaVentas()"><span class="functionKeys">F5</span><i class="fa fa-refresh"></i> Cambiar</button>
+                <button tabindex="-1" class="btn btn-outline-secondary mr-2" (click)="crearNuevaVenta()"><span class="functionKeys">F6</span><i class="fa fa-plus"></i> Nueva venta</button>
+                <button tabindex="-1" class="btn btn-outline-secondary" [disabled]="idVentaActiva == 0" (click)="eliminarVentaActiva()"><i class="fa fa-trash"></i> Eliminar</button>
+            </div>
+        </div>
+        <div>
+            <button tabindex="-1" class="btn btn-primary h-100" [disabled]="idVentaActiva == 0 || ventaTotalPesos == 0" (click)="cobrarVenta()"><span class="functionKeys">F12</span><i class="fa fa-shopping-cart"></i> Cobrar</button>
+        </div>
+    </div>
+    <div class="col col-2 p-2 totalVentaPesos">
+        {{ventaTotalPesos | currency: '$'}}
+    </div>
+</div>
+
+<!-- MODAL PARA SELECCION DE VENTA -->
+<div style="display: none;"> 
+    <div #modalSeleccionVenta>
+        <app-seleccionar-venta></app-seleccionar-venta>    
+    </div>
+</div>
+
+<!-- MODAL PARA COBRAR UNA VENTA -->
+<div style="display: none;"> 
+    <div #modalCobrarVenta>
+      <app-cobrar-venta [ventaTotalPesos] = ventaTotalPesos [cantidadArticulos] = cantidadArticulos [idVentaActiva] = idVentaActiva [productosVentaActual] = productosVentaActual></app-cobrar-venta>    
+    </div>
+  </div>

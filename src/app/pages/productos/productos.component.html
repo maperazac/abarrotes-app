@@ -1,4 +1,6 @@
-<app-productos-navbar (evento)="procesarEvento($event)"></app-productos-navbar>
+<app-productos-navbar (evento)="procesarEvento($event)" [botonSeleccionado]="botonSeleccionado"></app-productos-navbar>
 
-<app-nuevo-producto *ngIf="botonSeleccionado == 1" [esModificacion] = false></app-nuevo-producto>
-<app-nuevo-producto *ngIf="botonSeleccionado == 2" [esModificacion] = true></app-nuevo-producto>
+<app-nuevo-producto *ngIf="botonSeleccionado == 1" [esModificacion] = false (botonSeleccionado)="procesarEvento($event)"></app-nuevo-producto>
+<app-nuevo-producto *ngIf="botonSeleccionado == 2" [esModificacion] = true (botonSeleccionado)="procesarEvento($event)"></app-nuevo-producto>
+<app-buscar-productos *ngIf="botonSeleccionado == 3" [esVenta] = false></app-buscar-productos>
+<app-departamentos *ngIf="botonSeleccionado == 4"></app-departamentos>

@@ -1,8 +1,10 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { ProductosService } from '../../services/productos.service';
 import { ProductoModel } from 'src/app/models/producto.model';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
 import Swal from 'sweetalert2';
+import { Router } from '@angular/router';
+import { DepartamentosService } from 'src/app/services/departamentos.service';
 
 @Component({
   selector: 'app-buscar-productos',
@@ -10,37 +12,118 @@ import Swal from 'sweetalert2';
   styleUrls: ['./buscar-productos.component.scss']
 })
 export class BuscarProductosComponent implements OnInit {
+  @Input() esVenta:boolean;
+  @Output()
+  // productoAEditar = new EventEmitter<string>();
+
+  @HostListener('keydown', ['$event'])
+
+  handleKeyDown(event: any) {
+    if(event.code == 'Escape') {
+      event.preventDefault();
+      event.target.value = '';
+      this.cerrarBusqueda();
+    }
+
+    if(event.code == 'ArrowUp' || event.code == 'ArrowDown') {  // Flecha arriba para navegacion en la tabla de productos en venta actual
+      // event.preventDefault();
+      this.navegacionConFlechas(event.code); 
+    }
+  }
 
   productos: ProductoInterface[] = [];
   productosTemp = this.productos;
   @ViewChild('palabraClave') inputPalabraClave:ElementRef;
+  ProductoSeleccionado: ProductoInterface;
+  display = "none";
+  activarBotonAceptar=false;
 
-  constructor(private productosService: ProductosService, private el: ElementRef) { }
+  constructor(private productosService: ProductosService,
+              private departamentosService: DepartamentosService,
+              private el: ElementRef,
+              private router: Router) { }
 
   ngOnInit() {
     const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
     inputPalabraClave.focus();
-    inputPalabraClave.value='';
 
-    this.productosService.obtenerProductos().subscribe(productos => {
+    // this.productosService.obtenerProductos().subscribe(productos => {
+    //   this.productos = productos;
+    //   this.productosTemp = productos;
+    // })
+
+    // this.productosService.obtenerProductos().then(docRef => {
+    //   const productos: any[] = [];
+
+    //   docRef.forEach ( producto => {
+    //     productos.push({
+    //       id: producto.id,
+    //       ...producto.data()
+    //     })
+    //   })
+
+    //   this.productos = productos;
+    //   this.productosTemp = productos;
+    // })
+    this.actualizarProductos();
+
+  }
+
+  actualizarProductos () {
+    this.productosService.obtenerProductos().then(docRef => {
+      const productos: any[] = [];
+
+      docRef.forEach ( producto => {
+        this.departamentosService.obtenerDepartamentosPorId(producto.data()['departamento']).then (doc => {
+          productos.push({
+            id: producto.id,
+            ...producto.data(),
+            departamentoNombre: doc.data() != undefined ? doc.data()['nombre'] : '- Sin departamento -'
+          })
+        })
+      })
+
       this.productos = productos;
+      this.productosTemp = productos;
+
+      this.filtrarProductosDeLaBusqueda(event);
+      this.ProductoSeleccionado = <ProductoInterface>{}
+      this.activarBotonAceptar = false;
+      const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
+      inputPalabraClave.value='';
+      inputPalabraClave.focus();
     })
   }
 
-
-  ngOnDestroy() {
-    console.log("destoyu")
-  }
-
   filtrarProductosDeLaBusqueda(event: any) {
-    if (event.target.value.length >= 3) {
-      // console.log(this.productos)
-      this.productos = this.productos.filter((obj) => {
-        return obj.descripcion.toLowerCase() == event.target.value.toLowerCase()
-      })
-      // console.log(this.productosTemp);
+    
+    if (event) {
+      if (event.key == 'Enter') {
+        this.agregarProductoALaVenta();
+      } else {
+        if (event.target.value.length >= 3) {
+          if (event.key != 'ArrowUp' && event.key != 'ArrowDown' && event.key != 'ArrowLeft'&& event.key != 'ArrowRight') {  // Para que cuando estes tecleando, no haya ningun producto seleccionado
+            this.ProductoSeleccionado = <ProductoInterface>{}
+          } 
+          this.productosTemp = this.productos.filter((obj) => {
+            return obj.descripcion.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').includes(event.target.value.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''))
+          })
+
+          if (event.key != 'ArrowUp' && event.key != 'ArrowDown' && event.key != 'ArrowLeft'&& event.key != 'ArrowRight') {  // Para que cuando estes tecleando, no haya ningun producto seleccionado
+            if (this.productosTemp.length > 0) {
+              this.setProductoSeleccionado(this.productosTemp[0]);
+            }
+          } 
+
+          
+        } else {
+          this.productosTemp = this.productos;
+        }
+      }
+    } else {
+      this.productosTemp = this.productos;
     }
-}
+  }
 
 
   eliminarProducto(producto: ProductoInterface) {
@@ -67,16 +150,116 @@ export class BuscarProductosComponent implements OnInit {
           text: "Se ha eliminado el producto",
           icon: "success"
         });
-      } else if (
-        /* Read more about handling dismissals below */
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        // swalWithBootstrapButtons.fire({
-        //   title: "Cancelled",
-        //   text: "Your imaginary file is safe :)",
-        //   icon: "error"
-        // });
+      } else 
+      {
+        // Swal.fire({
+        //   html: "ok"
+        // })
       }
     });
+  }
+
+  setProductoSeleccionado(producto: ProductoInterface) {
+    // console.log(id)
+    let prodSel = Object.keys(this.ProductoSeleccionado).length != 0 ? true : false;
+    this.ProductoSeleccionado = producto;
+    const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
+    inputPalabraClave.focus();
+    this.activarBotonAceptar = true;
+  }
+
+  cerrarBusqueda() {
+    // this.filtrarProductosDeLaBusqueda(event);
+    this.productosTemp = this.productos;
+    this.ProductoSeleccionado = <ProductoInterface>{}
+    this.activarBotonAceptar = false;
+    setTimeout(() => {
+      Swal.close();
+    }, 50);
+  }
+
+  agregarProductoALaVenta() {
+    this.ProductoSeleccionado = <ProductoInterface>{}
+    this.activarBotonAceptar = false;
+    Swal.close();
+  }
+
+  openModalConfirmarBorrar() {
+    setTimeout(() => {
+      console.log(this.ProductoSeleccionado)
+      this.display = "block";
+    }, 100);
+  }
+
+  onCancelBorrar() {
+    this.display = "none";
+  }
+  onCloseHandledConfirmarBorrar() {
+    this.productosService.borrarProducto(this.ProductoSeleccionado)
+    this.display = "none";
+    this.actualizarProductos();
+  }
+
+  navegacionConFlechas(codigo: string) {
+
+    let prodSel = Object.keys(this.ProductoSeleccionado).length != 0 ? true : false;
+    // debugger;
+    if(!prodSel) {
+      if ( codigo == "ArrowDown" ) {
+        this.ProductoSeleccionado = this.productosTemp[0]
+      } else {
+        this.ProductoSeleccionado = this.productosTemp[this.productosTemp.length - 1];
+      }
+    } else {
+      let indexNuevo = 0;
+      this.productosTemp.forEach((item, index) => {
+         if(this.ProductoSeleccionado.codigoDeBarras == item.codigoDeBarras) {
+          if ( codigo == "ArrowDown" ) {
+            if(this.productosTemp.length > index + 1) {
+              indexNuevo = index + 1;
+            } else {
+              indexNuevo = 0;
+            }
+          } 
+          else {
+            // debugger;
+            if (index > 0) {
+              indexNuevo = index - 1;
+            } else {
+              indexNuevo = this.productosTemp.length - 1;
+            }
+          }
+        }
+      })
+      this.ProductoSeleccionado = {
+        id: this.productosTemp[indexNuevo].id,
+        codigoDeBarras: this.productosTemp[indexNuevo].codigoDeBarras,
+        descripcion: this.productosTemp[indexNuevo].descripcion,
+        seVende: this.productosTemp[indexNuevo].seVende,
+        precioCosto: this.productosTemp[indexNuevo].precioCosto,
+        ganancia: this.productosTemp[indexNuevo].ganancia,
+        precioVenta: this.productosTemp[indexNuevo].precioVenta,
+        precioMayoreo: this.productosTemp[indexNuevo].precioMayoreo,
+        departamento: this.productosTemp[indexNuevo].departamento,
+        cantidad: this.productosTemp[indexNuevo].cantidad
+      }
+    }
+
+    const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
+    inputPalabraClave.focus();
+    this.activarBotonAceptar = true;   
+  }
+
+  editarProducto() {
+    
+    setTimeout(() => {
+      // this.productoAEditar.emit(this.ProductoSeleccionado.codigoDeBarras)
+      let codigo = this.ProductoSeleccionado.codigoDeBarras;
+      this.ProductoSeleccionado = <ProductoInterface>{}
+      const prodSeleccionado= this.el.nativeElement.querySelector("#inputProductoSeleccionado");
+      prodSeleccionado.value='';
+      this.cerrarBusqueda();
+      this.router.navigateByUrl('/productos/' + codigo)
+    }, 100);
   }
 }

@@ -18,7 +18,11 @@ import { VentasNavbarComponent } from './components/ventas-navbar/ventas-navbar.
 import { BuscarProductosComponent } from './components/buscar-productos/buscar-productos.component';
 import { ProductosNavbarComponent } from './components/productos-navbar/productos-navbar.component';
 import { NuevoProductoComponent } from './components/nuevo-producto/nuevo-producto.component';
-import { ModalComponent } from './modals/modal/modal.component';
+import { VentasFooterComponent } from './components/ventas-footer/ventas-footer.component';
+import { DepartamentosComponent } from './components/departamentos/departamentos.component';
+import { SeleccionarVentaComponent } from './modals/seleccionar-venta/seleccionar-venta.component';
+import { ConfiguracionComponent } from './pages/configuracion/configuracion.component';
+import { CobrarVentaComponent } from './components/cobrar-venta/cobrar-venta.component';
 
 @NgModule({
   declarations: [
@@ -32,7 +36,11 @@ import { ModalComponent } from './modals/modal/modal.component';
     BuscarProductosComponent,
     ProductosNavbarComponent,
     NuevoProductoComponent,
-    ModalComponent
+    VentasFooterComponent,
+    DepartamentosComponent,
+    SeleccionarVentaComponent,
+    ConfiguracionComponent,
+    CobrarVentaComponent,
   ],
   imports: [
     BrowserModule,
@@ -42,7 +50,7 @@ import { ModalComponent } from './modals/modal/modal.component';
     provideFirestore(() => getFirestore()),
     FormsModule,
     HttpClientModule,
-    ReactiveFormsModule 
+    ReactiveFormsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

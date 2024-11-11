@@ -1,9 +1,12 @@
-import { Component, ElementRef, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, NgForm, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import DepartamentoInterface from 'src/app/interfaces/deparamentos.interface';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
 import { BuscarProductoModel } from 'src/app/models/buscarProducto.model';
 import { ProductoModel } from 'src/app/models/producto.model';
+import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { ProductosService } from 'src/app/services/productos.service';
 import Swal from 'sweetalert2';
 
@@ -13,14 +16,24 @@ import Swal from 'sweetalert2';
   styleUrls: ['./nuevo-producto.component.scss']
 })
 export class NuevoProductoComponent implements OnInit {
+  @ViewChild('nuevoDepartamento') nuevoDepartamento: ElementRef;
 
-  // producto = new ProductoModel();
   @Input() esModificacion:boolean;
+  @Output()
+  botonSeleccionado = new EventEmitter<number>();
   buscarProducto = new BuscarProductoModel();
-
   formulario: FormGroup;
+  id: number;
+  private sub: any;
+  deptos: DepartamentoInterface[] = [];
+  nombreNuevoDepartamento: string;
+  formularioInvalido = false;
 
-  constructor( private productosService: ProductosService, private el: ElementRef) {
+  constructor( private productosService: ProductosService, 
+               private el: ElementRef,
+               private route: ActivatedRoute,
+               private router: Router,
+               private departamentosService: DepartamentosService) {
     this.formulario = new FormGroup({
       // id: new FormControl(),
       codigoDeBarras: new FormControl(),
@@ -35,6 +48,32 @@ export class NuevoProductoComponent implements OnInit {
    }
 
   ngOnInit() {    
+    this.sub = this.route.params.subscribe(params => {
+      // debugger;
+      this.id = +params['id']; // (+) converts string 'id' to a number
+
+      if(!Number.isNaN(this.id)) {
+        this.esModificacion = true;
+        
+        this.buscarProducto.palabraClave = this.id.toString();
+
+        this.buscarProductoPorCodigoDeBaras();
+
+        setTimeout(() => {
+          this.botonSeleccionado.emit(2)
+        }, 100);
+      } else {
+        // setTimeout(() => {
+        //   this.botonSeleccionado.emit(1)
+        // }, 100);
+      }
+   });
+
+   this.obtenerDepartamentos();
+  }
+
+  ngOnDestroy() {
+    this.sub.unsubscribe();
   }
 
   ngAfterViewInit() {
@@ -48,10 +87,43 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   async guardar() {
-    if(this.formulario.invalid) {
-      console.log("Formulario no valido");
-      console.log(this.formulario.value)
+
+    this.formularioInvalido = false;
+
+    if(this.formulario.invalid || this.formulario.controls['seVende'].value == null || this.formulario.controls['departamento'].value == null) {
+      this.formularioInvalido = true;
       return;
+    }
+
+    if(this.formulario.controls['departamento'].value == -1) { //Si el departamento es -1 entonces es uno nuevo, aqui llamar servicio para ver si ya existe uno con ese nombre
+      let inputNuevoDepartamento = (<HTMLInputElement>document.getElementById("nuevoDepartamento")).value;
+      let deptosCount = 0;
+      let deptoId;
+
+      this.deptos.forEach(d => {
+        if(d.nombre.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '') == inputNuevoDepartamento.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')) {
+          deptosCount += 1;
+          deptoId = d.id;
+        }
+      })
+
+      if(deptosCount == 0) { // Significa que el nuevo departamento no existe, se agrega como nuevo.
+        let nuevoDepartamento = {
+          nombre: inputNuevoDepartamento
+        }
+        console.log(nuevoDepartamento)
+        await this.departamentosService.crearDepartamento(nuevoDepartamento).then(doc => {
+          console.log(doc.id)
+          this.obtenerDepartamentos();
+          this.formulario.patchValue({departamento: doc.id});
+        })
+        document.getElementById("nuevoDepartamento").hidden = true;
+        (<HTMLInputElement>document.getElementById("nuevoDepartamento")).value = '';
+      } else { // Significa que es un departamento que ya existe, repetido. Se asigna el id al dropdown de departamentos.
+        this.formulario.patchValue({departamento: deptoId});
+        document.getElementById("nuevoDepartamento").hidden = true;
+        (<HTMLInputElement>document.getElementById("nuevoDepartamento")).value = '';
+      }
     }
 
     Swal.fire({
@@ -74,8 +146,13 @@ export class NuevoProductoComponent implements OnInit {
           Swal.fire({
             title: 'Código repetido',
             text: 'Ya existe un producto registrado con este código de barras. Por favor verifique.',
-            icon: 'warning'
+            icon: 'warning',
+            didClose: () => {
+              const codigoDeBarras= this.el.nativeElement.querySelector("#codigoDeBarras");
+              codigoDeBarras.focus();
+            }
           })
+          
          }
       } else {
         await this.productosService.crearProducto(this.formulario.value).then( docRef => {
@@ -83,10 +160,16 @@ export class NuevoProductoComponent implements OnInit {
           Swal.fire({
             title: this.formulario.controls['descripcion'].value,
             text: 'Se agregó correctamente',
-            icon: 'success'
+            icon: 'success',
+            timer: 1500,
+            didClose: () => {
+              this.formulario.reset();     
+              const codigoDeBarras= this.el.nativeElement.querySelector("#codigoDeBarras");
+              codigoDeBarras.focus();
+            }
           })
       
-          this.formulario.reset();
+             
         })
         .catch(e => console.log('Error: ', e));
       }
@@ -130,14 +213,16 @@ export class NuevoProductoComponent implements OnInit {
 
   setDepartamento(departamento: string) {
     this.formulario.patchValue({departamento: departamento});
+    if(departamento != '-1') {
+      document.getElementById("nuevoDepartamento").hidden = true;
+    } else {
+      document.getElementById("nuevoDepartamento").hidden = false;
+      document.getElementById("nuevoDepartamento").focus();
+    }
   }
 
   validarCosto(event: any) {
     if(event.target.value== '') {
-      // this.producto.precioMayoreo = 0;
-      // this.producto.precioVenta = 0;
-      // this.producto.ganancia = 0;
-
       this.formulario.patchValue({precioMayoreo: 0});
       this.formulario.patchValue({precioVenta: 0});
       this.formulario.patchValue({ganancia: 0});
@@ -217,5 +302,21 @@ export class NuevoProductoComponent implements OnInit {
     })
     .catch( e => console.log('error: ', e))
   }
+
+  obtenerDepartamentos () {
+    this.departamentosService.obtenerDepartamentos().then(docRef => {
+      const departamentos: any[] = [];
+
+      docRef.forEach ( producto => {
+        departamentos.push({
+          id: producto.id,
+          ...producto.data()
+        })
+      })
+
+      this.deptos=departamentos;
+    })
+  }
+
 
 }

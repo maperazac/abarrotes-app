@@ -40,6 +40,7 @@
                     formControlName="codigoDeBarras"
                     name="codigoDeBarras"
                     id="codigoDeBarras"
+                    autocomplete="off"
                     required>
           </div>
         </div>
@@ -51,6 +52,7 @@
                     class="form-control"
                     formControlName="descripcion"
                     name="descripcion"
+                    autocomplete="off"
                     required>
           </div>
         </div>
@@ -80,76 +82,108 @@
             </div>
           </div>
         </div>
-  
+
         <div class="form-group row">
           <label class="col-form-label col-sm-2 text-right">Precio costo</label>
-          <div class="input-group col-sm-10">
-            <div class="input-group-prepend">
-              <span class="input-group-text">$</span>
+          <label class="col-form-label col-sm-10">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">$</span>
+              </div>
+              <input type="number"
+                      class="form-control"
+                      formControlName="precioCosto"
+                      name="precioCosto"
+                      (keyup) = "validarCosto($event)"
+                      required>
             </div>
-            <input type="number"
-                    class="form-control"
-                    formControlName="precioCosto"
-                    name="precioCosto"
-                    (keyup) = "validarCosto($event)"
-                    required>
-          </div>
+          </label>
         </div>
-  
+        
         <div class="form-group row">
           <label class="col-form-label col-sm-2 text-right">Ganancia</label>
-          <div class="input-group col-sm-10">
-            <input type="number"
-                    class="form-control"
-                    formControlName="ganancia"
-                    name="ganancia"
-                    (keyup) = "calcularPrecioVenta($event)"
-                    required>
-            <div class="input-group-append">
-              <span class="input-group-text">%</span>
+          <label class="col-form-label col-sm-10">
+            <div class="input-group">
+              <input type="number"
+                      class="form-control"
+                      formControlName="ganancia"
+                      name="ganancia"
+                      (keyup) = "calcularPrecioVenta($event)"
+                      required>
+              <div class="input-group-append">
+                <span class="input-group-text">%</span>
+              </div>
             </div>
-          </div>
+          </label>
+          
         </div>
   
         <div class="form-group row">
           <label class="col-form-label col-sm-2 text-right">Precio venta</label>
-          <div class="input-group col-sm-10">
-            <div class="input-group-prepend">
-              <span class="input-group-text">$</span>
+          <label class="col-form-label col-sm-10">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">$</span>
+              </div>
+              <input type="number"
+                      class="form-control"
+                      formControlName="precioVenta"
+                      name="precioVenta"
+                      (keyup) = "calcularGanancia($event)"
+                      required>
             </div>
-            <input type="number"
-                    class="form-control"
-                    formControlName="precioVenta"
-                    name="precioVenta"
-                    (keyup) = "calcularGanancia($event)"
-                    required>
-          </div>
+          </label>
         </div>
   
         <div class="form-group row">
           <label class="col-form-label col-sm-2 text-right">Precio mayoreo</label>
-          <div class="input-group col-sm-10">
-            <div class="input-group-prepend">
-              <span class="input-group-text">$</span>
+          <label class="col-form-label col-sm-10">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">$</span>
+              </div>
+              <input type="number"
+                      class="form-control"
+                      formControlName="precioMayoreo"
+                      name="precioMayoreo"
+                      required>
             </div>
-            <input type="number"
-                    class="form-control"
-                    formControlName="precioMayoreo"
-                    name="precioMayoreo"
-                    required>
-          </div>
+          </label>
+          
         </div>
   
         <div class="form-group row">
           <label class="col-form-label col-sm-2 text-right">Departamento</label>
-          <div class="input-group col-sm-10">
-            <select #departamentos class="custom-select" id="inputGroupSelect01" (change)="setDepartamento(departamentos.value)">
-              <option value="0" selected>- Sin departamento -</option>
-              <option value="1">Abarrotes</option>
-              <option value="2">Bebidas</option>
-              <option value="3">Frutas y verduras</option>
-            </select>
+          <label class="col-form-label col-sm-10">
+            <div class="input-group">
+              <select #departamentos class="custom-select" id="departamentos" (change)="setDepartamento(departamentos.value)" class="form-control"
+              formControlName="departamento"
+              name="departamento" >
+                <option value="0" [selected]>- Sin departamento -</option>
+                <option *ngFor="let departamento of deptos; let i = index" [value]=departamento.id>{{ departamento.nombre }}</option>
+                <option value="-1">+ Agregar nuevo</option>
+                <!-- <option value="2">Bebidas</option>
+                <option value="3">Frutas y verduras</option> -->
+              </select>
+            </div>
+          </label>
+
+
+          <div class="col-sm-10 offset-sm-2">
+            <input type="text"
+                    class="form-control"
+                    autocomplete="off"
+                    placeholder="Nombre de nuevo departamento"
+                    id="nuevoDepartamento"
+                    hidden>
           </div>
+
+
+          
+        </div>
+
+        <div *ngIf="formularioInvalido" class="bg-danger text-white p-2 mb-2 rounded text-center">
+          Para continuar, debe llenar todos los campos del formulario.
         </div>
   
         <hr>

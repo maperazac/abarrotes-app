@@ -1,5 +1,6 @@
-import { Component, OnInit, Output } from '@angular/core';
+import { Component, Input, OnInit, Output } from '@angular/core';
 import { EventEmitter } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-productos-navbar',
@@ -7,14 +8,15 @@ import { EventEmitter } from '@angular/core';
   styleUrls: ['./productos-navbar.component.scss']
 })
 export class ProductosNavbarComponent implements OnInit {
-
+  @Input() botonSeleccionado
   @Output()
   evento = new EventEmitter<number>();
-  botonSeleccionado = 1;
+  // botonSeleccionado = 1;
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
+    // console.log("boton seleccionado en productos-navbar: ", this.botonSeleccionado)
   }
 
   emitirEvento(evento: number) {
@@ -22,4 +24,13 @@ export class ProductosNavbarComponent implements OnInit {
     this.evento.emit(this.botonSeleccionado)
   }
 
+  navegarProductos(elem) {
+    this.router.navigateByUrl("/productos")
+    // setTimeout(() => {
+      if(this.botonSeleccionado != elem) {
+        this.botonSeleccionado = elem;
+        this.evento.emit(this.botonSeleccionado)
+      }
+    // }, 500);
+  }
 }
