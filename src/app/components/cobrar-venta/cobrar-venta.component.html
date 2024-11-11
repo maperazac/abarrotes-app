@@ -1,0 +1,57 @@
+<div>
+    <h3>
+        Cobrar <strong>{{cantidadArticulos}}</strong> {{cantidadArticulos > 1 ? 'artículos' : 'artículo'}}
+    </h3>
+    <div class="totalVentaPesos">
+        {{ventaTotalPesos | currency: '$'}}
+    </div>
+    <div class="col-sm-12 mt-3">
+        <div class="row">
+            <div class="col-sm-12 p-2">
+                <h5>Forma de pago:</h5>
+            </div>
+            <div class="col-sm-4 p-2 tab-cobrar" [ngClass]="formaPago == 1 ? 'activa' : ''" (click)="cambiarFormaPago(1)">
+                <i class="fa fa-money"></i> Efectivo
+            </div>
+            <div class="col-sm-4 p-2 tab-cobrar" [ngClass]="formaPago == 2 ? 'activa' : ''" (click)="cambiarFormaPago(2)">
+                <i class="fa fa-user"></i> Crédito (fiado)
+            </div>
+            <div class="col-sm-4 p-2 tab-cobrar" [ngClass]="formaPago == 3 ? 'activa' : ''" (click)="cambiarFormaPago(3)">
+                <i class="fa fa-asterisk"></i> Mixto
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 mt-3" *ngIf="formaPago == 1">
+        <!-- <input class="form-control input-pago-con" type="number" placeholder="$" value=ventaTotalPesos> -->
+        <div class="input-group mb-2">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">Pagó con: $</span>
+            </div>
+            <input type="number" 
+                    class="form-control"
+                    formControlName="pagoCon" 
+                    name="pagoCon"
+                    (keyup) = "calcularCambio($event)"
+                    aria-describedby="basic-addon1" 
+                    value={{ventaTotalPesos}}
+                    id="pagoCon">
+        </div>
+        <div class="input-group mb-2">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">Su cambio: $</span>
+            </div>
+            <input type="number" class="form-control" disabled aria-describedby="basic-addon1" value={{cambio}}>
+        </div>
+    </div>
+    <div class="col-sm-12" *ngIf="formaPago == 2">
+        <div class="row">
+            <div class="col-sm-12 area-pago">
+                Buscar cliente: 
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 mt-4 mb-2">
+        <button class="btn btn-primary me-2" (click) = "cobrarEImprimirTicket()" [disabled]=!activarBotonAceptar><i class="fa fa-print"></i> F1 - Cobrar e imprimir ticket</button>
+        <button class="btn btn-secondary" (click)="cerrarBusqueda()"><i class="fa fa-close"></i> ESC - Cancelar</button>
+    </div>
+</div>

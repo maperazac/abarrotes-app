@@ -1,7 +1,8 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild, HostListener } from '@angular/core';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
 import VentaInterface from 'src/app/interfaces/ventas.interface';
 import { VentasService } from 'src/app/services/ventas.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-ventas-footer',
@@ -10,18 +11,45 @@ import { VentasService } from 'src/app/services/ventas.service';
 })
 export class VentasFooterComponent implements OnInit {
 
+  @HostListener('document:keydown', ['$event'])
+
+  handleKeyDown(event: KeyboardEvent) {
+    if((event.code == 'F5')) {  // F5 para abrir el modal para moverse entre las ventas actuales
+      event.preventDefault();
+      if(this.ventasActuales.length > 1) {
+        this.mostrarListaVentas(); 
+      }
+    }
+    if((event.code == 'F12')) {  // F12 para abrir modal para cobrar la venta.
+      event.preventDefault();
+      this.cobrarVenta(); 
+    }
+
+    if((event.code == 'F1')) {  // F12 para abrir modal para cobrar la venta.
+      event.preventDefault();
+    }
+  }
+
+  @ViewChild('modalSeleccionVenta') modalSeleccionVenta: ElementRef;
+  @ViewChild('modalCobrarVenta') modalCobrarVenta: ElementRef;
   productosVentaActual: ProductoInterface[];
   cantidadArticulos = 0;
   ventaTotalPesos = 0;
   idVentaActiva;
+  ventasActuales;
+  inputVentaActualModal: HTMLInputElement;
+  pagoConInput: HTMLInputElement;
 
-  constructor(private ventasService: VentasService) { 
+  constructor(private ventasService: VentasService,
+              private el: ElementRef
+  ) { 
   }
 
   ngOnInit() {
-    console.log("oninit del footer")
     this.ventasService.$productosVentaActual.subscribe((valor) => {
-      this.productosVentaActual = valor;
+      this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage();
+      this.productosVentaActual = valor.filter(p => p.ventaId == this.idVentaActiva);
+
       this.cantidadArticulos = 0;
       this.ventaTotalPesos = 0;
       this.productosVentaActual.map(item => {
@@ -32,8 +60,24 @@ export class VentasFooterComponent implements OnInit {
 
     this.ventasService.$idVentaActiva.subscribe((id) => {
       this.idVentaActiva = id;
-      // console.log("Venta activa:" ,this.idVentaActiva)
+      const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
+      this.productosVentaActual = productosEnVentasActuales.filter(v => v.ventaId == id);
+      
+      this.cantidadArticulos = 0;
+      this.ventaTotalPesos = 0;
+      this.productosVentaActual.map(item => {
+        this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
+        this.ventaTotalPesos += item.cantidad * item.precioVenta;
+      })
     })  
+
+    this.ventasService.$ventasActuales.subscribe(ventas => {
+      this.ventasActuales = ventas;
+    })
+
+    this.ventasActuales = this.ventasService.obtenerTodasLasVentasActuales();
+    
+    this.cargarTotalesIniciales()
   }
 
   crearNuevaVenta() {
@@ -51,6 +95,7 @@ export class VentasFooterComponent implements OnInit {
       status: '1',
       seleccionada: 1
     }
+
     this.ventasService.agregarVentaLocalstorage(nuevaVenta);
     this.ventasService.$idVentaActiva.emit(nuevaVenta.idTemp);
   }
@@ -68,7 +113,13 @@ export class VentasFooterComponent implements OnInit {
 
     let item = ventasActuales.findIndex(i => i.idTemp === this.idVentaActiva) // Obtiene la posicion en el array de la venta que se va a eliminar.
 
-    await this.ventasService.eliminarVentaLocalStorage(this.idVentaActiva);
+    await this.ventasService.eliminarVentaLocalStorage(this.idVentaActiva);  // Elimina la venta del localstorage
+
+    // Aqui recorrer el array de productos en la venta actual y eliminar todos los productos ligados a esta venta que se acaba de eliminar
+    const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
+    let productosActualizados = productosEnVentasActuales.filter(prod => prod.ventaId != this.idVentaActiva);
+    localStorage.setItem("productosEnVentasLS", JSON.stringify(productosActualizados));
+    this.ventasService.$productosVentaActual.emit(productosActualizados);
 
     if(item == 0 && ventasActuales.length != 1) { // Si el index que se quiere borrar es el 0 (o sea la primera pestaña) pero no es el unico, la venta activa pasa a el elemento de enseguida, no el anterior, como seria si se quiere eliminar una pestaña que no es la primera
       // this.ventasService.$idVentaActiva.emit(ventasActuales[item + 1].idTemp)
@@ -95,5 +146,96 @@ export class VentasFooterComponent implements OnInit {
         }
       })
     }
+  }
+
+  cargarTotalesIniciales() {
+    this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage();
+      const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
+      this.productosVentaActual = productosEnVentasActuales.filter(v => v.ventaId == this.idVentaActiva);
+      
+      this.cantidadArticulos = 0;
+      this.ventaTotalPesos = 0;
+      this.productosVentaActual.map(item => {
+        this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
+        this.ventaTotalPesos += item.cantidad * item.precioVenta;
+      })
+  }
+
+  mostrarListaVentas() {
+    Swal.fire({
+      allowOutsideClick: false,
+      html: this.modalSeleccionVenta.nativeElement,
+      focusConfirm: false,
+      allowEscapeKey: true,
+      width: '500px',
+      showConfirmButton: true,
+      showCancelButton: false,
+      allowEnterKey: true,
+      confirmButtonText: '<i class="fa fa-check"></i> Enter - Seleccionar venta',
+      didOpen:() => {
+        const popup = Swal.getPopup()!
+        this.inputVentaActualModal = popup.querySelector('#inputVentaActiva')
+        // this.inputProductoSeleccionado = popup.querySelector('#inputProductoSeleccionado') as HTMLInputElement
+        // this.inputProductoSeleccionado.value='';
+        },
+      didClose: () => {
+        // setTimeout(() => {
+        //     const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
+        //     inputCodigoDeProducto.focus();
+        //   }, 100);
+        },
+      preConfirm: () => {
+        // console.log(inputProductoSeleccionado.value)
+      }
+    }).then(res=>{
+      if(res.isConfirmed) {
+        if(this.inputVentaActualModal.value != '') {
+          this.ventasService.setVentaActiva(parseInt(this.inputVentaActualModal.value));
+        } else {
+        }
+      } else {
+        this.inputVentaActualModal.value = '';
+      }    
+    })
+  }
+
+  cobrarVenta() {
+    if (this.ventaTotalPesos <= 0) {
+      return;
+    }
+    Swal.fire({
+      allowOutsideClick: false,
+      html: this.modalCobrarVenta.nativeElement,
+      focusConfirm: false,
+      // allowEscapeKey: true,
+      width: '700px',
+      showConfirmButton: false,
+      showCancelButton: false,
+      didOpen:() => {
+        const popup = Swal.getPopup()!
+        this.pagoConInput = popup.querySelector('#pagoCon') as HTMLInputElement
+        this.pagoConInput.value='';
+        this.pagoConInput.focus();
+
+        // this.inputProductoSeleccionado = popup.querySelector('#inputProductoSeleccionado') as HTMLInputElement
+        // this.inputProductoSeleccionado.value='';
+        },
+      didClose: () => {
+        // setTimeout(() => {
+        //     const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
+        //     inputCodigoDeProducto.focus();
+        //   }, 100);
+        },
+      preConfirm: () => {
+        // console.log(inputProductoSeleccionado.value)
+      }
+    }).then(res=>{
+      // NO BORRAR!!!!!!!!!!!!!!!!!! USAR PARA AGREGAR EL PRODUCTO SELECCIONADO A LA LISTA DE ARTICULOS PARA VENTA
+      // if(this.inputProductoSeleccionado.value != '') {
+      //   this.agregarProductoVentaActual(this.inputProductoSeleccionado.value)
+      // } else {
+      //   // console.log("nada que agregar")
+      // }
+    })
   }
 }

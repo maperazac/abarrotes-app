@@ -1,10 +1,10 @@
 <div class="d-flex animated fadeIn faster bg-light p-3">
     <button disabled [ngClass]="botonSeleccionado == 1 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(1)"><i class="fa fa-plus-square" aria-hidden="true"></i> INS Varios</button>
-    <button [disabled]="idVentaActiva == 0" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(2)"><span class="functionKeys">Ctrl</span><span class="functionKeys">P</span><i class="fa fa-edit" aria-hidden="true"></i> Producto común</button>
-    <button [disabled]="idVentaActiva == 0" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(3)"><span class="functionKeys">F10</span><i class="fa fa-search" aria-hidden="true"></i> Buscar</button>
+    <button [disabled]="idVentaActiva == 0" tabindex="-1" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(2)"><span class="functionKeys">Ctrl</span><span class="functionKeys">P</span><i class="fa fa-edit" aria-hidden="true"></i> Producto común</button>
+    <button [disabled]="idVentaActiva == 0" tabindex="-1" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(3)"><span class="functionKeys">F10</span><i class="fa fa-search" aria-hidden="true"></i> Buscar</button>
     <button disabled [ngClass]="botonSeleccionado == 4 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(4)"><i class="fa fa-cubes" aria-hidden="true"></i> Mayoreo</button>
-    <button disabled [ngClass]="botonSeleccionado == 5 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(5)"><i class="fa fa-calendar" aria-hidden="true"></i> Entradas</button>
-    <button disabled [ngClass]="botonSeleccionado == 6 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(6)"><i class="fa fa-calendar" aria-hidden="true"></i> Salidas</button>
+    <button disabled [ngClass]="botonSeleccionado == 5 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(5)"><i class="fa fa-arrow-circle-down" aria-hidden="true"></i> Entradas</button>
+    <button disabled [ngClass]="botonSeleccionado == 6 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(6)"><i class="fa fa-arrow-circle-up" aria-hidden="true"></i> Salidas</button>
     <button [disabled]="idVentaActiva == 0" tabindex="-1" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(7)"><span class="functionKeys">DEL</span><i class="fa fa-trash" aria-hidden="true"></i> Borrar artículo</button>
   </div>
   <hr>

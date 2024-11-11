@@ -2,9 +2,9 @@
   <form (submit)="agregarProductoVentaActual(buscarProducto.palabraClave)">
     <div>
       <div class="input-group w-50">
-        <input [disabled] = "idVentaActiva == 0" type="text" class="form-control" [(ngModel)] = "buscarProducto.palabraClave" name="codigoDeProducto" id="codigoDeProducto" #codigoDeProducto placeholder="Código del producto" aria-label="Código del producto" aria-describedby="button-addon2" autocomplete="off">
+        <input tabindex="-1" [disabled] = "idVentaActiva == 0" type="text" class="form-control" [(ngModel)] = "buscarProducto.palabraClave" name="codigoDeProducto" id="codigoDeProducto" #codigoDeProducto placeholder="Código del producto" aria-label="Código del producto" aria-describedby="button-addon2" autocomplete="off">
         <div class="input-group-append">
-          <button [disabled] = "idVentaActiva == 0" class="btn btn-success" (click)="agregarProductoVentaActual(buscarProducto.palabraClave)" type="button" id="button-addon2">Agregar producto</button>
+          <button tabindex="-1" [disabled] = "idVentaActiva == 0" class="btn btn-success" (click)="agregarProductoVentaActual(buscarProducto.palabraClave)" type="button" id="button-addon2">Agregar producto</button>
         </div>
       </div>
     </div>
@@ -30,7 +30,7 @@
 
   <ul class="nav nav-tabs" *ngIf="ventas.length > 0">
     <li class="nav-item" *ngFor="let venta of ventas; let i = index">
-      <a class="nav-link" [ngClass]="venta.idTemp == idVentaActiva ? 'active animated fadeInUp faster' : ''" (click)="seleccionarComoVentaActiva(venta.idTemp)"><i class="fa fa-bookmark"></i> Ticket {{ venta.posicion }}</a>
+      <a class="nav-link" [ngClass]="venta.idTemp == idVentaActiva ? 'active animated fadeInUp faster' : ''" (click)="seleccionarComoVentaActiva(venta.idTemp)"><i class="fa fa-ticket"></i> {{ venta.idTemp }}</a>
     </li>
   </ul>
 
@@ -51,13 +51,13 @@
 
   <ng-template #sinVentasActivas>
     <div class="text-center" style="margin-top: 65px;">
-      Presione la tecla <span class="functionKeys">F6</span> para iniciar una nueva venta
+      Presione la tecla <span class="functionKeys">F6</span> para iniciar una venta
     </div>
   </ng-template>
   <div style="height: calc(100vh - 497px); overflow-y: auto;">
     <div *ngFor="let producto of productosVentaActual; let i = index" class="animated fadeIn faster">
       <div *ngIf="producto.ventaId == idVentaActiva">
-        <input (change)="selectRow(producto.id)" class="form-check-input" type="radio" name="exampleRadios" [id]=producto.id [value]=producto.id [checked]="producto.id == rowSelected">
+        <input (change)="selectRow(producto.id)" class="form-check-input" type="radio" name="productosRadioSelect" [id]=producto.id [value]=producto.id [checked]="producto.id == rowSelected">
         <div class="radio-productos-venta"  [ngClass]="i % 2 === 0 ? 'even' : 'odd'">
           <label [for]=producto.id class="form-check-label w-100">
             <label class="form-check-label text-center" [for]=producto.id  style="width:15%; padding: .5rem; border-right: solid 1px #fff;">
@@ -87,8 +87,9 @@
   </footer>
 </div>
 
+<!-- MODAL PARA BUSQUEDA DE PRODUCTOS -->
 <div style="display: none;"> 
-  <div #myAlert>
+  <div #modalBusquedaProductos>
     <app-buscar-productos [esVenta] = true></app-buscar-productos>    
   </div>
 </div>

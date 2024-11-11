@@ -16,15 +16,17 @@ export class VentasService {
 
   $idVentaActiva = new EventEmitter<number>();
 
-  guardarVenta(venta: VentaInterface) {
-    return addDoc(this.ventasCollectionRef, venta);
-  }
+  // Se va a usar para guardar la venta en base de datos. Se tiene que modificar
+  // guardarVenta(venta: VentaInterface) {
+  //   return addDoc(this.ventasCollectionRef, venta);
+  // }
 
-  async obtenerVentas() {
-    const q = query(this.ventasCollectionRef, orderBy('fecha'))
-    const dep = await getDocs(q)
-    return dep;
-  }
+  // Se va a usar para obtener las ventas registradas y completadas en base de datos
+  // async obtenerVentas() {  
+  //   const q = query(this.ventasCollectionRef, orderBy('fecha'))
+  //   const dep = await getDocs(q)
+  //   return dep;
+  // }
 
   agregarVentaLocalstorage(venta: VentaInterface) {
     let ventas: VentaInterface[] = []; 
@@ -69,6 +71,11 @@ export class VentasService {
       } 
     });
     return ventaActiva;
+  }
+
+  obtenerTodasLasVentasActuales() {
+    const ventasActuales = JSON.parse(localStorage.getItem("ventasLS"));
+    return ventasActuales;
   }
 
   setVentaActiva(id: number) {

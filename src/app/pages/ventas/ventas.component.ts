@@ -20,7 +20,6 @@ export class VentasComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
 
   handleKeyDown(event: KeyboardEvent) {
-    console.log(event.code)
     if(event.code == 'F10') {  // F10  para abrir popup de busqueda de productos
       event.preventDefault();
       if (this.idVentaActiva) this.procesarEvento(3);
@@ -38,7 +37,7 @@ export class VentasComponent implements OnInit {
 
     if((event.code == 'ArrowUp' || event.code == 'ArrowDown') && this.idVentaActiva) {  // Flecha arriba para navegacion en la tabla de productos en venta actual
       // event.preventDefault();
-      this.navegacionConFlechas(); 
+      this.navegacionConFlechas(event.code); 
     }
 
     if(event.code == 'NumpadAdd') {  // + Para aumentar la cantidad de un producto en 1
@@ -74,10 +73,12 @@ export class VentasComponent implements OnInit {
   }
 
   @Input() modalCerrado;
-  @ViewChild('myAlert') myAlert: ElementRef;
+  @ViewChild('modalBusquedaProductos') modalBusquedaProductos: ElementRef;
+  @ViewChild('modalCobrarVenta') modalCobrarVenta: ElementRef;
   modalBusquedaProductosAbierto = false;
   buscarProducto = new BuscarProductoModel();
   productosVentaActual: ProductoInterface[] = [];
+  productosEnVentaActiva: ProductoInterface[] = []; 
   botonSeleccionado = 0;
   busquedaInput: HTMLInputElement  
   inputProductoSeleccionado: HTMLInputElement 
@@ -95,7 +96,8 @@ export class VentasComponent implements OnInit {
 
   ngOnInit() {
     this.efectivoInicialRegistrado();
-    this.obtenerVentasActivas()
+    this.obtenerVentasActivas();
+    this.obtenerProductosEnVentasActuales();
     
     this.ventasService.$ventasActuales.subscribe((valor) => {
       this.ventas = valor;
@@ -119,9 +121,9 @@ export class VentasComponent implements OnInit {
       inputPalabraClave.focus();
   }
 
-  async obtenerVentasActivas() {
+  async obtenerVentasActivas() {  // Revisa en localstorage si hay ventas pendientes y abiertas, en caso de que no exista, se crea una nueva.
     const ventas: VentaInterface[] = JSON.parse(localStorage.getItem("ventasLS"))
-    if(ventas == null || ventas.length == 0) {
+    if(ventas == null || ventas.length == 0) { // Si no existen ventas en el localstorage, se inserta una nueva
       let nuevaVenta = {
         idTemp: this.getRandomInt(1000000, 9999999),
         fecha: new Date(),
@@ -136,21 +138,31 @@ export class VentasComponent implements OnInit {
         status: '1',
         seleccionada: 1
       }
-      this.ventasService.agregarVentaLocalstorage(nuevaVenta)
-      this.ventas.push(nuevaVenta);
+      this.ventasService.agregarVentaLocalstorage(nuevaVenta) // Y esa nueva creada, se agrega al localstorage
+      this.ventas.push(nuevaVenta); // Y tambien se agrega a "ventas" para que se muestre en las pestañas de ventas
       // this.idVentaActiva = nuevaVenta.idTemp;
-      this.seleccionarComoVentaActiva(nuevaVenta.idTemp)
-    } else {
+      localStorage.setItem("productosEnVentasLS", JSON.stringify([]));
+      this.seleccionarComoVentaActiva(nuevaVenta.idTemp) // Como no habia ninguna, esta nueva creada se marca como la venta activa (pestaña abierta)
+    } else { // En caso contrario, que ya existan ventas pendientes en el localstorage, solo se obtienen y se asignan a la variable "ventas" para mostrar las pestañas
       this.ventas = ventas;
       this.ventas.forEach(el => {
-        if (el.seleccionada) this.seleccionarComoVentaActiva(el.idTemp)
+        if (el.seleccionada) this.seleccionarComoVentaActiva(el.idTemp) // Aqui se revisa cual de las ventas en el localstorage viene con "seleccionada" = 1 para seguir dejando esta activa
       })
+    }
+  }
+
+  async obtenerProductosEnVentasActuales() {
+    const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS")) // Se obtiene el localstorage con los productos que se han agregado a ventas actuales
+    if(productosEnVentasActuales != null && productosEnVentasActuales.length > 0) { // Se revisa si el localstorage trae algo, en ese caso, se asigna a productosVentaActual
+      this.productosVentaActual = productosEnVentasActuales;
+      this.ventasService.$productosVentaActual.emit(this.productosVentaActual); // Y se emite el array para tenerlo disponible en otros componentes de la aplicacion, en este caso el footer para mostrar los totales.
+    } else {
+      localStorage.setItem("productosEnVentasLS", JSON.stringify([]));
     }
   }
 
   selectRow(id: string) {
     this.rowSelected = id;
-    console.log("ROW SELECTED: ", this.rowSelected)
   }
 
   efectivoInicialRegistrado() {
@@ -197,6 +209,10 @@ export class VentasComponent implements OnInit {
     // -----------------------------------------------------------------
 
     if(id == 2) {  // Producto común
+      let descripcionProducto: HTMLInputElement; 
+      let cantidadProducto: HTMLInputElement; 
+      let precioProducto: HTMLInputElement; 
+
       const { value: formValues } = await Swal.fire({
         title: 'Producto común',
         html: `
@@ -213,7 +229,7 @@ export class VentasComponent implements OnInit {
         <div style="width: 3%; display: flex; align-items: center; margin-top: 20px; margin-right: 2px;"><i class="fa fa-times"></i></div>
         
         <div style="width: 50%;">
-          Precio: <br/>
+          Precio unitario: <br/>
           <input type="number" id="precioProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
         </div>
         `,
@@ -232,6 +248,44 @@ export class VentasComponent implements OnInit {
             (<HTMLInputElement>document.getElementById("precioProductoComun")).value
           ];
         },
+        didOpen: () => {
+          const popup = Swal.getPopup()!
+          descripcionProducto = popup.querySelector('#descripcionProductoComun') as HTMLInputElement
+          cantidadProducto = popup.querySelector('#cantidadProductoComun') as HTMLInputElement
+          precioProducto = popup.querySelector('#precioProductoComun') as HTMLInputElement
+
+          (descripcionProducto).onkeyup = (event) => {
+            if (event.key === 'Enter') {
+              if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
+                Swal.showValidationMessage(`Es necesario llenar todos los campos`);
+              } else {
+                Swal.clickConfirm();
+              }
+            }
+          }
+
+          (cantidadProducto).onkeyup = (event) => {
+            if (event.key === 'Enter') {
+              if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
+                Swal.showValidationMessage(`Es necesario llenar todos los campos`);
+              } else {
+                Swal.clickConfirm();
+              }
+            }
+          }
+
+          (precioProducto).onkeyup = (event) => {
+            if (event.key === 'Enter') {
+              if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
+                Swal.showValidationMessage(`Es necesario llenar todos los campos`);
+              } else {
+                Swal.clickConfirm();
+              }
+            }
+          }
+
+
+        },
         didClose: () => {
           const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
           inputPalabraClave.focus();
@@ -248,9 +302,11 @@ export class VentasComponent implements OnInit {
           precioVenta: formValues[2],
           precioMayoreo: formValues[2],
           departamento: "0",
-          cantidad: parseFloat(formValues[1])
+          cantidad: parseFloat(formValues[1]),
+          ventaId: this.idVentaActiva
         }
         this.productosVentaActual.push(nuevoProductoComun);
+        localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
         this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
         this.selectRow(nuevoProductoComun.id)
       } else {
@@ -263,7 +319,7 @@ export class VentasComponent implements OnInit {
     if(id == 3) { // Abrir modal de busqueda de productos
       Swal.fire({
           allowOutsideClick: false,
-          html: this.myAlert.nativeElement,
+          html: this.modalBusquedaProductos.nativeElement,
           focusConfirm: false,
           allowEscapeKey: false,
           width: '1000px',
@@ -299,7 +355,7 @@ export class VentasComponent implements OnInit {
     // -----------------------------------------------------------------
 
     if (id == 7) {  // Eliminar producto seleccionado de la venta actual
-      let elemento = (<HTMLInputElement>document.querySelector('input[name=exampleRadios]:checked'))
+      let elemento = (<HTMLInputElement>document.querySelector('input[name=productosRadioSelect]:checked'))
       
       if(elemento) {
         Swal.fire({
@@ -323,14 +379,43 @@ export class VentasComponent implements OnInit {
     }
   }
 
-  navegacionConFlechas() {
-    let elemento = (<HTMLInputElement>document.querySelector('input[name=exampleRadios]:checked'))
+  navegacionConFlechas(codigo: string) {
+    let actualizado = false;
+    let elemento = <HTMLInputElement>document.querySelector('input[name=productosRadioSelect]:checked')
+    let prodVentaActiva = this.productosVentaActual.filter(p => p.ventaId == this.idVentaActiva);
     if(elemento){
-      elemento.focus() 
+      prodVentaActiva.forEach((prod, index) => {
+        if( prod.id == this.rowSelected && !actualizado) {
+          if(codigo == 'ArrowDown') {
+            if(prodVentaActiva.length > index + 1) {
+              let elem = document.getElementById(prodVentaActiva[index + 1].id);
+              elem.click();
+            } else {
+              let elem = document.getElementById(prodVentaActiva[0].id);
+              elem.click();
+            }
+          } else {
+            if(index > 0) {
+              let elem = document.getElementById(prodVentaActiva[index - 1].id);
+              elem.click();
+            } else {
+              let elem = document.getElementById(prodVentaActiva[prodVentaActiva.length - 1].id);
+              elem.click();
+            }
+          }
+          
+          actualizado = true;
+        } 
+      });
     } else {
-      let elemento = (<HTMLInputElement>document.querySelector('input[name=exampleRadios]'))
+      let elemento = (<HTMLInputElement>document.querySelector('input[name=productosRadioSelect]'))
       if(elemento){
-        elemento.click()
+        if(codigo == 'ArrowDown') {
+          elemento.click()
+        } else {
+          let elem = document.getElementById(prodVentaActiva[prodVentaActiva.length - 1].id);
+          elem.click();
+        }
       }
     }
   }
@@ -379,6 +464,10 @@ export class VentasComponent implements OnInit {
         })
       } else {
         if(productos[0].seVende == 1) { // Productos que se venden por pieza
+
+          this.beep();
+          this.productosVentaActual = JSON.parse(localStorage.getItem("productosEnVentasLS"));
+          
           if (this.productosVentaActual.filter(p => p.ventaId == this.idVentaActiva).length !== 0) {  // Si ya existen articulos en la venta activa actual
             this.productosVentaActual.forEach(prod => {
               if (prod.id == productos[0].id && prod.ventaId == this.idVentaActiva) {
@@ -445,7 +534,7 @@ export class VentasComponent implements OnInit {
             didOpen: () => {
               const popup = Swal.getPopup()!
               importeInput = popup.querySelector('#importe') as HTMLInputElement
-              importeInput.value = '$'
+              importeInput.value = '$0.00'
               cantidadProductoInput = popup.querySelector('#cantidad') as HTMLInputElement
               cantidadProductoInput.onkeyup = (event) => {
                 if (event.key === 'Enter') {
@@ -453,20 +542,21 @@ export class VentasComponent implements OnInit {
                 } else {
                   if (cantidadProductoInput.value != '') {
                     importeInput.value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((parseFloat(cantidadProductoInput.value) * productos[0].precioVenta)).toString()
-                  } else importeInput.value = '$'
+                  } else importeInput.value = '$0.00'
                 }
               }
               cantidadProductoInput.focus();
             },
             preConfirm: () => {
               const cantidad = cantidadProductoInput.value
-              if (cantidad == '') {
-                Swal.showValidationMessage(`Introduce la cantidad de producto`)
+              if (cantidad == '' || parseFloat(cantidad) <= 0) {
+                Swal.showValidationMessage(`Introduce una cantidad válida`)
               } else {
                 if (this.productosVentaActual.length !== 0) {
-                  this.productosVentaActual.forEach(prod => {
-                    if (prod.id == productos[0].id) {
-                      item = this.productosVentaActual.findIndex(i => i.id === productos[0].id)
+                  this.productosVentaActual.forEach((prod, index) => {
+                    if (prod.id == productos[0].id && prod.ventaId == this.idVentaActiva) {
+                      // item = this.productosVentaActual.findIndex(i => i.id === productos[0].id && prod.ventaId == this.idVentaActiva)
+                      item = index;
                       productoRepetido = true;
                       return;
                     } 
@@ -491,6 +581,7 @@ export class VentasComponent implements OnInit {
             didClose: () => {
               const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
               inputCodigoDeProducto.focus();
+              localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
               this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
             }
           })
@@ -502,16 +593,16 @@ export class VentasComponent implements OnInit {
 
         this.selectRow(productos[0].id)
       }
+      localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
       this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
-      console.log(this.productosVentaActual)
-
     }).catch( e => console.log('error: ', e))
   }
 
   borrarProductoVentaActual(codigo) {
     this.productosVentaActual.forEach((item, index) => {
-      if (item.id === codigo) this.productosVentaActual.splice(index, 1);
+      if (item.id === codigo && item.ventaId === this.idVentaActiva) this.productosVentaActual.splice(index, 1);
     })
+    localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
     this.ventasService.$productosVentaActual.emit(this.productosVentaActual);
   }
 
@@ -526,6 +617,7 @@ export class VentasComponent implements OnInit {
         } else {
           this.productosVentaActual[item].cantidad -= 1;
         }
+        localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
         this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
       }
     }
@@ -537,6 +629,7 @@ export class VentasComponent implements OnInit {
     if(item>-1) {
       if(this.productosVentaActual[item].seVende != 2) {  // Permitir incrementar solo cuando NO ES VENTA A GRANEL
         this.productosVentaActual[item].cantidad += 1;
+        localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
         this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
       }
     }    
@@ -576,5 +669,10 @@ export class VentasComponent implements OnInit {
     }
     this.ventasService.agregarVentaLocalstorage(nuevaVenta);
     this.ventasService.$idVentaActiva.emit(nuevaVenta.idTemp);
+  }
+
+  beep() {
+    var snd = new  Audio("data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=");  
+    snd.play();
   }
 }

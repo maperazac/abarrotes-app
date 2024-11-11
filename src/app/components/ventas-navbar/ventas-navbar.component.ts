@@ -27,5 +27,4 @@ export class VentasNavbarComponent implements OnInit {
     this.botonSeleccionado = evento;
     this.evento.emit(this.botonSeleccionado)
   }
-
 }

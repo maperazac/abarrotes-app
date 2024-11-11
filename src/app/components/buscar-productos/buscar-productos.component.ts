@@ -96,14 +96,26 @@ export class BuscarProductosComponent implements OnInit {
   }
 
   filtrarProductosDeLaBusqueda(event: any) {
+    
     if (event) {
       if (event.key == 'Enter') {
         this.agregarProductoALaVenta();
       } else {
         if (event.target.value.length >= 3) {
+          if (event.key != 'ArrowUp' && event.key != 'ArrowDown' && event.key != 'ArrowLeft'&& event.key != 'ArrowRight') {  // Para que cuando estes tecleando, no haya ningun producto seleccionado
+            this.ProductoSeleccionado = <ProductoInterface>{}
+          } 
           this.productosTemp = this.productos.filter((obj) => {
             return obj.descripcion.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').includes(event.target.value.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''))
           })
+
+          if (event.key != 'ArrowUp' && event.key != 'ArrowDown' && event.key != 'ArrowLeft'&& event.key != 'ArrowRight') {  // Para que cuando estes tecleando, no haya ningun producto seleccionado
+            if (this.productosTemp.length > 0) {
+              this.setProductoSeleccionado(this.productosTemp[0]);
+            }
+          } 
+
+          
         } else {
           this.productosTemp = this.productos;
         }
@@ -191,17 +203,31 @@ export class BuscarProductosComponent implements OnInit {
   navegacionConFlechas(codigo: string) {
 
     let prodSel = Object.keys(this.ProductoSeleccionado).length != 0 ? true : false;
-
+    // debugger;
     if(!prodSel) {
-      this.ProductoSeleccionado = this.productosTemp[0]
+      if ( codigo == "ArrowDown" ) {
+        this.ProductoSeleccionado = this.productosTemp[0]
+      } else {
+        this.ProductoSeleccionado = this.productosTemp[this.productosTemp.length - 1];
+      }
     } else {
       let indexNuevo = 0;
       this.productosTemp.forEach((item, index) => {
          if(this.ProductoSeleccionado.codigoDeBarras == item.codigoDeBarras) {
           if ( codigo == "ArrowDown" ) {
-            indexNuevo = index + 1;
-          } else {
-            indexNuevo = index - 1;
+            if(this.productosTemp.length > index + 1) {
+              indexNuevo = index + 1;
+            } else {
+              indexNuevo = 0;
+            }
+          } 
+          else {
+            // debugger;
+            if (index > 0) {
+              indexNuevo = index - 1;
+            } else {
+              indexNuevo = this.productosTemp.length - 1;
+            }
           }
         }
       })
@@ -217,7 +243,6 @@ export class BuscarProductosComponent implements OnInit {
         departamento: this.productosTemp[indexNuevo].departamento,
         cantidad: this.productosTemp[indexNuevo].cantidad
       }
-      console.log("nuevo seleccionado: ", this.ProductoSeleccionado)
     }
 
     const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");

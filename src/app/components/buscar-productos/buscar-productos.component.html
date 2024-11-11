@@ -1,7 +1,7 @@
 <div class="text-left busqueda-container-dialog animated fadeIn faster" [ngClass] = "!esVenta ? 'w-50  p-3' : ''">
     <h4 *ngIf="esVenta">Búsqueda de productos</h4>
     <h4 *ngIf="!esVenta">Eliminar productos</h4>
-    <input type="text" disabled value={{ProductoSeleccionado?ProductoSeleccionado.codigoDeBarras:ProductoSeleccionado}} id="inputProductoSeleccionado">
+    <input type="text" disabled value={{ProductoSeleccionado?ProductoSeleccionado.codigoDeBarras:ProductoSeleccionado}} id="inputProductoSeleccionado" style="opacity: 0;">
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <span class="input-group-text" id="basic-addon1"><i class="fa fa-search"></i></span>
