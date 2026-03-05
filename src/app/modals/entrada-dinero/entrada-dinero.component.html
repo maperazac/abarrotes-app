@@ -1,0 +1,115 @@
+<div class="entrada-dinero-container">
+  <h3><i class="fa fa-arrow-circle-down"></i> Entrada de Dinero</h3>
+  
+  <form [formGroup]="formularioEntrada">
+    <div class="form-group">
+      <label for="cantidad">Cantidad ($)</label>
+      <input 
+        type="number" 
+        class="form-control" 
+        id="cantidad" 
+        formControlName="cantidad"
+        placeholder="0.00"
+        step="0.01"
+        min="0.01"
+        autofocus>
+    </div>
+
+    <div class="form-group mt-3">
+      <label for="detalle">Detalles</label>
+      <textarea 
+        class="form-control" 
+        id="detalle" 
+        formControlName="detalle"
+        rows="3"
+        maxlength="200"
+        placeholder="Describe el motivo de la entrada de dinero"></textarea>
+      <small class="text-muted">{{formularioEntrada.get('detalle')?.value?.length || 0}}/200 caracteres</small>
+    </div>
+
+    <div class="botones-container mt-4">
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="guardarEntrada()"
+        [disabled]="formularioEntrada.invalid || guardando">
+        <span class="functionKeys">F2</span>
+        <i *ngIf="guardando" class="fa fa-spinner fa-pulse"></i>
+        <i *ngIf="!guardando" class="fa fa-save"></i>
+        Guardar
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="cerrarModal()"
+        [disabled]="guardando">
+        <span class="functionKeys">ESC</span> <i class="fa fa-times"></i> Cancelar
+      </button>
+    </div>
+  </form>
+
+  <hr class="my-4">
+
+  <div class="entradas-pasadas-section">
+    <button 
+      type="button" 
+      class="btn btn-outline-primary btn-block mb-3" 
+      (click)="toggleMostrarEntradas()">
+      <i class="fa" [ngClass]="mostrarEntradas ? 'fa-eye-slash' : 'fa-eye'"></i>
+      {{ mostrarEntradas ? 'Ocultar entradas' : 'Ver entradas pasadas' }} ({{ entradasPasadas.length }})
+    </button>
+
+    <div *ngIf="mostrarEntradas" class="entradas-lista animated fadeIn">
+      <div *ngIf="entradasPasadas.length === 0" class="text-center text-muted py-3">
+        <i class="fa fa-inbox"></i> No hay entradas registradas hoy
+      </div>
+
+      <div *ngIf="entradasPasadas.length > 0">
+        <div 
+          *ngFor="let entrada of entradasPasadas; let i = index" 
+          class="entrada-item"
+          [ngClass]="{'selected': entrada.id === entradaSeleccionada, 'even': i % 2 === 0, 'odd': i % 2 !== 0}"
+          (click)="seleccionarEntrada(entrada.id!)">
+          
+          <input 
+            type="radio" 
+            [id]="entrada.id" 
+            [value]="entrada.id" 
+            name="entradaRadio"
+            [checked]="entrada.id === entradaSeleccionada"
+            class="entrada-radio">
+          
+          <label [for]="entrada.id" class="entrada-label">
+            <div class="entrada-info">
+              <div class="entrada-cantidad">
+                <strong>${{ entrada.cantidad.toFixed(2) }}</strong>
+              </div>
+              <div class="entrada-detalle">
+                {{ entrada.detalle }}
+              </div>
+              <div class="entrada-fecha">
+                <small class="text-muted">
+                  <i class="fa fa-clock-o"></i> 
+                  {{ entrada.fecha.toDate() | date:'short' }}
+                </small>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div class="mt-3">
+          <button 
+            type="button" 
+            class="btn btn-danger btn-sm" 
+            (click)="confirmarEliminarEntrada()"
+            [disabled]="!entradaSeleccionada || eliminando">
+            <span class="functionKeys">DEL</span>
+            <i *ngIf="eliminando" class="fa fa-spinner fa-pulse"></i>
+            <i *ngIf="!eliminando" class="fa fa-trash"></i>
+            Cancelar entrada seleccionada
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

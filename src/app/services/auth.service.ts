@@ -1,8 +1,10 @@
-import { Injectable } from '@angular/core';
+import { EventEmitter, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { usuarioModel } from '../models/usuario.model';
 
-import { map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, interval, of } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -11,19 +13,64 @@ export class AuthService {
   private url  = 'https://identitytoolkit.googleapis.com/v1/accounts:';
   private apikey = 'AIzaSyCQFg_zVkI7Co-b64pz1H7t7gj3_a9hGWg';
 
+  private sessionExpired = new BehaviorSubject<boolean>(false); // Observable para detectar la expiración
+  private checkInterval = 10000; // Intervalo de tiempo (10 segundos) para verificar la sesión
+
+  // Método para verificar si la sesión sigue activa
+  isSessionActive(): boolean {
+    const token = localStorage.getItem('token'); // Obtén el token o indicador de sesión
+    if (!token) return false; // Si no hay token, la sesión no está activa
+
+    // Aquí podrías verificar la expiración del token (JWT, tiempo, etc.)
+    const tokenExpiration = Number(localStorage.getItem('tokenExpiration'));
+    if (!tokenExpiration || isNaN(tokenExpiration)) return false; // Si no hay expiración válida, la sesión no está activa
+
+    return Date.now() < tokenExpiration; // Devuelve true si el token aún no ha expirado
+  }
+
+  // Configurar el chequeo automático de la sesión
+  startSessionCheck(): void {
+    interval(this.checkInterval)
+      .pipe(
+        switchMap(() => {
+          // No verificar la sesión si estamos en el login
+          if (this.router.url.includes('/login')) {
+            return of(true); // La sesión no se chequea
+          }
+          return of(this.isSessionActive());
+        }),
+        catchError(() => of(false)) // En caso de error, asumir que la sesión no es válida
+      )
+      .subscribe(isActive => {
+        if (!isActive) {
+          this.sessionExpired.next(true); // Notificar la expiración
+          this.logout(); // Realizar logout automáticamente
+        }
+      });
+  }
+
+  // Observable para detectar expiración de sesión
+  onSessionExpired() {
+    return this.sessionExpired.asObservable();
+  }
+
+
   userToken: string;
   // Crear nuevo usuario
   // https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=[API_KEY]
 
   // Login
   // https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=[API_KEY]
-  constructor(private http: HttpClient) { 
+  constructor(private http: HttpClient, private router: Router) { 
     this.leerToken();
   }
+  
 
   logout(){
     localStorage.removeItem('token');
+    localStorage.removeItem('tokenExpiration');
     localStorage.removeItem('efectivoInicialEnCaja');
+    this.router.navigate(['/login']);
   }
 
   login(usuario: usuarioModel){
@@ -63,11 +110,8 @@ export class AuthService {
   private guardarToken(idToken: string){
     this.userToken = idToken;
     localStorage.setItem('token', idToken);
-
-    let hoy = new Date();
-    hoy.setSeconds(3600);  //El token expira en una hora, aqui se tiene que aumentar si se necesita que la sesion dure todo el dia
-
-    localStorage.setItem('expira', hoy.getTime().toString());
+    
+    localStorage.setItem('tokenExpiration', (Date.now() + 72000000).toString()); // Expira en:1 minuto (60000), 1 hora (3600000), 20 horas (72000000)
   }
 
   leerToken(){
@@ -85,7 +129,7 @@ export class AuthService {
       return false;
     }
 
-    const expira = Number(localStorage.getItem('expira'));
+    const expira = Number(localStorage.getItem('tokenExpiration'));
     const expiraDate = new Date();
     expiraDate.setTime(expira);
 

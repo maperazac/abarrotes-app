@@ -1,0 +1,116 @@
+.salida-dinero-container {
+  padding: 10px;
+
+  h3 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+}
+
+.botones-container {
+  display: flex;
+  gap: 10px;
+
+  button {
+    flex: 1;
+  }
+}
+
+.salidas-pasadas-section {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.salidas-lista {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.salida-item {
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &.even {
+    background-color: #f8f9fa;
+  }
+
+  &.odd {
+    background-color: #fff;
+  }
+
+  &.selected {
+    background-color: #dc3545 !important;
+    color: white;
+
+    .text-muted {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+  }
+
+  &:hover {
+    background-color: #e9ecef;
+  }
+
+  &.selected:hover {
+    background-color: #c82333 !important;
+  }
+}
+
+.salida-radio {
+  display: none;
+}
+
+.salida-label {
+  display: block;
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.salida-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.salida-cantidad {
+  font-size: 18px;
+  color: #dc3545;
+
+  .selected & {
+    color: white;
+  }
+}
+
+.salida-detalle {
+  font-size: 14px;
+}
+
+.salida-fecha {
+  font-size: 12px;
+}
+
+.functionKeys {
+  display: inline-block;
+  padding: 4px 8px;
+  margin: 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  text-transform: uppercase;
+  color: #2c3e50;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+  border: 2px solid #adb5bd;
+  border-radius: 4px;
+  box-shadow: 0 2px 0 #6c757d, 0 3px 4px rgba(0, 0, 0, 0.2);
+  min-width: 32px;
+  cursor: default;
+  user-select: none;
+}

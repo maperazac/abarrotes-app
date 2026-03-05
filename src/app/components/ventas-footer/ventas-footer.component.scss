@@ -1,17 +1,20 @@
 .functionKeys {
-    // padding: 3px 5px;
-    // margin-right: 5px;
-    // border-radius: 5px;
-    // border: solid 1px;
-    padding: 3px 5px;
-    margin-right: 5px;
-    border-radius: 5px;
-    border: solid 1px;
-    box-shadow: inset 0 0 4px #333333;
-    border-color: #fff;
-    background-color: #a09f9f;
-    color: #fff;
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 0 4px;
+    font-size: 11px;
     font-weight: 700;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    text-transform: uppercase;
+    color: #2c3e50;
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+    border: 2px solid #adb5bd;
+    border-radius: 4px;
+    box-shadow: 0 2px 0 #6c757d, 0 3px 4px rgba(0, 0, 0, 0.2);
+    min-width: 32px;
+    cursor: default;
+    user-select: none;
 }
 
 .totalVentaPesos {

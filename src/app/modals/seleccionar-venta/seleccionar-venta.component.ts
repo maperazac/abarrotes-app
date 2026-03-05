@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
-import VentaInterface from 'src/app/interfaces/ventas.interface';
-import { VentasService } from 'src/app/services/ventas.service';
+import { TeclasService } from 'src/app/services/teclas.service';
+import { VentasdbService } from 'src/app/services/ventasdb.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -12,7 +12,19 @@ export class SeleccionarVentaComponent implements OnInit {
 
   @HostListener('keydown', ['$event'])
 
-  handleKeyDown(event: KeyboardEvent) {
+  async handleKeyboardEvent(event: KeyboardEvent) {
+    // ***** TODO ESTE BLOQUE TIENE QUE IR EN LOS COMPONENTES DE TODOS LOS CUADROS DE DIALOGO *****
+    // Bloquear combinaciones como Control+O
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
+      event.preventDefault();
+      return;
+    }    
+    // Si no es una tecla permitida, prevenimos su acción predeterminada
+    if (!this.teclas.esTeclaPermitida(event)) {
+      event.preventDefault();
+    } 
+    // **********************************************************************************************
+
     if((event.code == 'ArrowUp' || event.code == 'ArrowDown')) {  // Flecha arriba para navegacion en la tabla de productos en venta actual
       // event.preventDefault();
       this.navegacionConFlechas(event.code); 
@@ -20,7 +32,15 @@ export class SeleccionarVentaComponent implements OnInit {
 
     if((event.code == 'Enter')) {  // Flecha arriba para navegacion en la tabla de productos en venta actual
       // event.preventDefault();
-      this.ventasService.setVentaActiva(this.ventaSeleccionada);
+      this.cargando = true;
+      let sec = 0;
+      let timer = setInterval(() => {
+        this.duracionEnSegundos = this.contador(++sec%60);
+      }, 1000);
+      await this.ventasdbService.setVentaActiva(this.ventaSeleccionadaInterno);
+      this.cargando = false;
+      clearInterval(timer);
+      this.duracionEnSegundos = 0;
       Swal.close();
     }
 
@@ -29,38 +49,35 @@ export class SeleccionarVentaComponent implements OnInit {
     }
   }
 
-  constructor(private ventasService: VentasService) { }
+  cargando = false;
+  duracionEnSegundos = 0;
+
+  constructor(private ventasdbService: VentasdbService,
+              private teclas: TeclasService
+  ) { }
 
   ventaSeleccionada: number = 0;
-  ventasActuales: VentaInterface[] = [];
+  ventaSeleccionadaInterno;
+  ventasActuales:  any[] = [];
 
   ngOnInit(): void {
-    this.ventasService.$ventasActuales.subscribe(ventas => {
+    this.ventasdbService.$ventasActuales.subscribe(ventas => {
       this.ventasActuales = ventas;
     })
 
-    this.ventasService.$idVentaActiva.subscribe((id) => {
+    this.ventasdbService.$idVentaActiva.subscribe((id) => {
       this.ventaSeleccionada = id;
-      // const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
-      // this.productosVentaActual = productosEnVentasActuales.filter(v => v.ventaId == id);
-      
-      // this.cantidadArticulos = 0;
-      // this.ventaTotalPesos = 0;
-      // this.productosVentaActual.map(item => {
-      //   this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
-      //   this.ventaTotalPesos += item.cantidad * item.precioVenta;
-      // })
     })  
 
+    this.ventasdbService.$idVentaActivaInterno.subscribe((idInterno) => {
+      this.ventaSeleccionadaInterno = idInterno;
+    })  
 
-    this.ventasActuales = this.ventasService.obtenerTodasLasVentasActuales();
-    this.ventaSeleccionada = this.ventasService.obtenerVentaActivaLocalStorage();
-
-    this.seleccionarVenta(this.ventaSeleccionada);
+    this.seleccionarVenta(this.ventaSeleccionadaInterno);
   }
 
   seleccionarVenta(id: number) {
-    this.ventaSeleccionada = id;
+    this.ventaSeleccionadaInterno = id;
   }
   
   // document.getElementById(this.ventaSeleccionada.toString()).click();
@@ -70,21 +87,21 @@ export class SeleccionarVentaComponent implements OnInit {
    
     if(elemento){
       this.ventasActuales.forEach((venta, index) => {
-        if( venta.idTemp == this.ventaSeleccionada && !actualizado) {
+        if( venta.id == this.ventaSeleccionadaInterno && !actualizado) {
           if(codigo == 'ArrowDown') {
             if(this.ventasActuales.length > index + 1) {
-              let elem = document.getElementById(this.ventasActuales[index + 1].idTemp.toString());
+              let elem = document.getElementById(this.ventasActuales[index + 1].id);
               elem.click();
             } else {
-              let elem = document.getElementById(this.ventasActuales[0].idTemp.toString());
+              let elem = document.getElementById(this.ventasActuales[0].id);
               elem.click();
             }
           } else {
             if(index > 0) {
-              let elem = document.getElementById(this.ventasActuales[index - 1].idTemp.toString());
+              let elem = document.getElementById(this.ventasActuales[index - 1].id);
               elem.click();
             } else {
-              let elem = document.getElementById(this.ventasActuales[this.ventasActuales.length - 1].idTemp.toString());
+              let elem = document.getElementById(this.ventasActuales[this.ventasActuales.length - 1].id);
               elem.click();
             }
           }
@@ -99,10 +116,14 @@ export class SeleccionarVentaComponent implements OnInit {
         if(codigo == 'ArrowDown') {
           elemento.click()
         } else {
-          let elem = document.getElementById(this.ventasActuales[this.ventasActuales.length - 1].idTemp.toString());
+          let elem = document.getElementById(this.ventasActuales[this.ventasActuales.length - 1].id);
           elem.click();
         }
       }
     }
+  }
+
+  contador(valor) {
+    return valor > 9 ? valor : '0' + valor;
   }
 }

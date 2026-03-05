@@ -156,7 +156,7 @@
           <label class="col-form-label col-sm-2 text-right">Departamento</label>
           <label class="col-form-label col-sm-10">
             <div class="input-group">
-              <select #departamentos class="custom-select" id="departamentos" (change)="setDepartamento(departamentos.value)" class="form-control"
+              <select #departamentos id="departamentos" (change)="setDepartamento(departamentos.value)" class="form-control custom-select"
               formControlName="departamento"
               name="departamento" >
                 <option value="0" [selected]>- Sin departamento -</option>

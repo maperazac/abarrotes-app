@@ -5,6 +5,7 @@ import ProductoInterface from 'src/app/interfaces/productos.interface';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
+import { TeclasService } from 'src/app/services/teclas.service';
 
 @Component({
   selector: 'app-buscar-productos',
@@ -18,10 +19,21 @@ export class BuscarProductosComponent implements OnInit {
 
   @HostListener('keydown', ['$event'])
 
-  handleKeyDown(event: any) {
+  handleKeyDown(event: KeyboardEvent) {
+    // ***** TODO ESTE BLOQUE TIENE QUE IR EN LOS COMPONENTES DE TODOS LOS CUADROS DE DIALOGO *****
+    // Bloquear combinaciones como Control+O
+    if (event.ctrlKey || event.altKey || event.metaKey) {
+      event.preventDefault();
+      return;
+    }    
+    // Si no es una tecla permitida, prevenimos su acción predeterminada
+    if (!this.teclas.esTeclaPermitida(event)) {
+      event.preventDefault();
+    } 
+    // **********************************************************************************************
+
     if(event.code == 'Escape') {
       event.preventDefault();
-      event.target.value = '';
       this.cerrarBusqueda();
     }
 
@@ -41,7 +53,8 @@ export class BuscarProductosComponent implements OnInit {
   constructor(private productosService: ProductosService,
               private departamentosService: DepartamentosService,
               private el: ElementRef,
-              private router: Router) { }
+              private router: Router,
+              private teclas: TeclasService) { }
 
   ngOnInit() {
     const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");

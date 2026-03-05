@@ -1,5 +1,24 @@
-body {
+html, body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* Desactiva las barras de desplazamiento */
 }
+
+/* Asegura que el contenido no se desborde verticalmente */
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* El contenedor toma toda la altura de la pantalla */
+    overflow: hidden; /* Evita el scroll dentro del contenedor */
+    min-width: 100%;
+    padding: 0;
+  }
+  
+  .content {
+    flex-grow: 1; /* Hace que el contenido ocupe el espacio restante disponible */
+    //overflow: auto; /* Agrega scroll solo cuando el contenido se desborda */
+  }

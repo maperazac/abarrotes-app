@@ -1,6 +1,6 @@
 import { Component, OnInit, Output } from '@angular/core';
 import { EventEmitter } from '@angular/core';
-import { VentasService } from 'src/app/services/ventas.service';
+import { VentasdbService } from 'src/app/services/ventasdb.service';
 
 @Component({
   selector: 'app-ventas-navbar',
@@ -14,10 +14,10 @@ export class VentasNavbarComponent implements OnInit {
   botonSeleccionado = 0;
   idVentaActiva;
 
-  constructor(private ventasService: VentasService) { }
+  constructor(private ventasdbService: VentasdbService) { }
 
   ngOnInit() {
-    this.ventasService.$idVentaActiva.subscribe((id) => {
+    this.ventasdbService.$idVentaActiva.subscribe((id) => {
       this.idVentaActiva = id;
       // console.log("Venta activa:" ,this.idVentaActiva)
     })  
