@@ -1,0 +1,840 @@
+// Asegurar scroll en el componente
+:host {
+  display: block;
+//   min-height: 84vh;
+//   height: 84vh;
+  overflow-y: auto;
+}
+
+.corte-caja-container {
+  min-height: 100vh;
+  height: auto;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+  padding-bottom: 4rem;
+}
+
+// ==================== Pantalla de Selección ====================
+.seleccion-corte {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 3rem 0;
+}
+
+.header-seleccion {
+  text-align: center;
+  color: white;
+  margin-bottom: 4rem;
+
+  .icono-caja {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    animation: pulseIcon 2s infinite;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+  }
+}
+
+@keyframes pulseIcon {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.botones-corte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.btn-corte {
+  background: white;
+  border: none;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+
+  &:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .icono-btn {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: #667eea;
+  }
+
+  h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+  }
+
+  p {
+    color: #718096;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+  }
+
+  .info-adicional {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+}
+
+// ==================== Loading ====================
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(102, 126, 234, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+
+  .spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    color: white;
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
+    font-weight: 600;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ==================== Reporte ====================
+.reporte-corte {
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-bottom: 2rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: visible;
+}
+
+// Botones de acción
+.acciones-reporte {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.acciones-grupo {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-accion {
+  background: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2c3e50;
+
+  i {
+    font-size: 1.1rem;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &.btn-volver {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+
+    &:hover {
+      background: white;
+      color: #2c3e50;
+    }
+  }
+
+  &.btn-excel {
+    &:hover {
+      background: #28a745;
+      color: white;
+    }
+  }
+
+  &.btn-imprimir {
+    &:hover {
+      background: #17a2b8;
+      color: white;
+    }
+  }
+
+  &.btn-email {
+    &:hover {
+      background: #dc3545;
+      color: white;
+    }
+  }
+}
+
+// Encabezado del reporte
+.encabezado-reporte {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 4px solid #667eea;
+
+  .logo-empresa {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    i {
+      font-size: 3rem;
+      color: #667eea;
+    }
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin: 0;
+    }
+  }
+
+  .info-corte {
+    text-align: right;
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+
+    .detalles-corte {
+      p {
+        margin: 0.25rem 0;
+        color: #4a5568;
+        font-size: 0.95rem;
+
+        strong {
+          color: #2d3748;
+        }
+      }
+    }
+  }
+}
+
+// Resumen General (Cards)
+.resumen-general {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+.card-resumen {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 1rem;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .card-icono {
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+  }
+
+  .card-contenido {
+    flex: 1;
+
+    .card-label {
+      font-size: 0.85rem;
+      color: #718096;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-valor {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0.25rem 0;
+    }
+
+    .card-detalle {
+      font-size: 0.85rem;
+      color: #a0aec0;
+      margin: 0;
+    }
+  }
+
+  &.card-dinero {
+    border-left: 4px solid #10b981;
+
+    .card-icono {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+    }
+
+    .card-valor {
+      color: #10b981;
+    }
+  }
+
+  &.card-ventas {
+    border-left: 4px solid #3b82f6;
+
+    .card-icono {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+
+    .card-valor {
+      color: #3b82f6;
+    }
+  }
+
+  &.card-ganancia {
+    border-left: 4px solid #8b5cf6;
+
+    .card-icono {
+      background: rgba(139, 92, 246, 0.1);
+      color: #8b5cf6;
+    }
+
+    .card-valor {
+      color: #8b5cf6;
+    }
+  }
+
+  &.card-articulos {
+    border-left: 4px solid #f59e0b;
+
+    .card-icono {
+      background: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+    }
+
+    .card-valor {
+      color: #f59e0b;
+    }
+  }
+}
+
+// Secciones del reporte
+.seccion-reporte {
+  padding: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.seccion-doble {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  &.seccion-pendiente {
+    background: #fef3c7;
+    border: 2px dashed #f59e0b;
+    border-radius: 12px;
+    margin: 0 2rem 2rem;
+  }
+}
+
+.columna-mitad {
+  flex: 1;
+}
+
+.titulo-seccion {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  i {
+    color: #667eea;
+  }
+
+  &.entradas i {
+    color: #10b981;
+  }
+
+  &.salidas i {
+    color: #ef4444;
+  }
+
+  .badge-pendiente {
+    background: #fbbf24;
+    color: #78350f;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+}
+
+// Estilos para secciones colapsables
+.titulo-colapsable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  padding: 0.75rem;
+  margin: -0.75rem;
+  border-radius: 8px;
+
+  &:hover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .icono-toggle {
+    margin-left: auto;
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+  }
+}
+
+.contenido-colapsable {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Tablas
+.tabla-resumen {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+
+  .fila-resumen {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &.destacada {
+      background: white;
+      padding: 1rem;
+      margin: 0.5rem -0.5rem -0.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border: none;
+    }
+
+    .label {
+      color: #4a5568;
+    }
+
+    .valor {
+      font-weight: 600;
+      color: #2d3748;
+
+      &.positivo {
+        color: #10b981;
+      }
+
+      &.negativo {
+        color: #ef4444;
+      }
+    }
+
+    .badge-pendiente {
+      background: #fbbf24;
+      color: #78350f;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 10px;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+
+  thead {
+    background: #f8fafc;
+
+    th {
+      padding: 1rem;
+      text-align: left;
+      font-weight: 700;
+      color: #2d3748;
+      border-bottom: 2px solid #e2e8f0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #e2e8f0;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: #f8fafc;
+      }
+
+      td {
+        padding: 1rem;
+        color: #4a5568;
+      }
+    }
+  }
+
+  tfoot {
+    background: #f8fafc;
+    font-weight: 700;
+
+    td {
+      padding: 1rem;
+      border-top: 2px solid #e2e8f0;
+    }
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+}
+
+// Badges
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  &.badge-efectivo {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &.badge-credito {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+}
+
+// Porcentaje con barra
+.porcentaje-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.barra-porcentaje {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+
+  .barra-relleno {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.5s ease;
+  }
+}
+
+.porcentaje-texto {
+  font-weight: 600;
+  color: #667eea;
+  min-width: 50px;
+  text-align: right;
+}
+
+// Mensajes
+.mensaje-vacio {
+  text-align: center;
+  color: #a0aec0;
+  padding: 2rem;
+  font-style: italic;
+}
+
+.mensaje-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #92400e;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  margin-top: 1rem;
+
+  i {
+    font-size: 1.5rem;
+    color: #f59e0b;
+  }
+}
+
+// Pie del reporte
+.pie-reporte {
+  padding: 3rem 2rem;
+  display: flex;
+  justify-content: space-around;
+  background: #f8fafc;
+
+  .firma-cajero,
+  .firma-gerente {
+    text-align: center;
+
+    .linea-firma {
+      width: 200px;
+      height: 2px;
+      background: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin: 0.25rem 0;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .label-firma {
+      font-size: 0.85rem;
+      color: #718096;
+      font-weight: 400;
+    }
+  }
+}
+
+// ==================== Estilos para impresión ====================
+@media print {
+  .corte-caja-container {
+    background: white;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .reporte-corte {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+  }
+
+  .encabezado-reporte {
+    background: white;
+    border-bottom: 2px solid #000;
+  }
+
+  .resumen-general {
+    background: white;
+  }
+
+  .card-resumen {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+  }
+
+  .seccion-reporte {
+    page-break-inside: avoid;
+  }
+
+  .titulo-seccion {
+    color: #000;
+
+    i {
+      color: #000;
+    }
+    
+    // Ocultar iconos de toggle en impresión
+    &.titulo-colapsable {
+      cursor: default;
+      
+      .icono-toggle {
+        display: none;
+      }
+    }
+  }
+  
+  // Forzar que todo el contenido colapsable se muestre al imprimir
+  .contenido-colapsable {
+    display: block !important;
+  }
+
+  table {
+    thead {
+      background: #f0f0f0;
+
+      th {
+        color: #000;
+      }
+    }
+  }
+
+  .badge {
+    border: 1px solid #000;
+    background: white !important;
+    color: #000 !important;
+  }
+
+  .barra-porcentaje {
+    border: 1px solid #000;
+
+    .barra-relleno {
+      background: #666 !important;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .corte-caja-container {
+    padding: 1rem;
+  }
+
+  .header-seleccion {
+    h1 {
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+    }
+  }
+
+  .botones-corte {
+    grid-template-columns: 1fr;
+  }
+
+  .encabezado-reporte {
+    flex-direction: column;
+    text-align: center;
+
+    .info-corte {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+  }
+
+  .resumen-general {
+    grid-template-columns: 1fr;
+  }
+
+  .seccion-doble {
+    grid-template-columns: 1fr !important;
+  }
+
+  .acciones-reporte {
+    flex-direction: column;
+    gap: 1rem;
+
+    .acciones-grupo {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  table {
+    font-size: 0.85rem;
+
+    thead th,
+    tbody td {
+      padding: 0.5rem;
+    }
+  }
+}

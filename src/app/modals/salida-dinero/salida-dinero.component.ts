@@ -147,7 +147,7 @@ export class SalidaDineroComponent implements OnInit {
         fecha: Timestamp.fromDate(new Date()),
         cantidad: parseFloat(this.formularioSalida.get('cantidad')?.value),
         detalle: this.formularioSalida.get('detalle')?.value.trim(),
-        idCajero: '0' // TODO: obtener del usuario logueado
+        idCajero: localStorage.getItem('userId') || '0'
       };
 
       await this.salidasService.registrarSalida(salida);

@@ -21,4 +21,5 @@ html, body {
   .content {
     flex-grow: 1; /* Hace que el contenido ocupe el espacio restante disponible */
     //overflow: auto; /* Agrega scroll solo cuando el contenido se desborda */
+    display: contents;
   }

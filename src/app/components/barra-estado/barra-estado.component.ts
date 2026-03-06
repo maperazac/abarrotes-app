@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { VentasdbService } from 'src/app/services/ventasdb.service';
 import VentaInterface from 'src/app/interfaces/ventas.interface';
 
@@ -8,6 +8,7 @@ import VentaInterface from 'src/app/interfaces/ventas.interface';
   styleUrls: ['./barra-estado.component.scss']
 })
 export class BarraEstadoComponent implements OnInit {
+  @Output() abrirVentasDelDia = new EventEmitter<void>();
   ultimaVenta: VentaInterface | null = null;
   total: string = '0';
   pagoCon: string = '0';
@@ -78,7 +79,6 @@ export class BarraEstadoComponent implements OnInit {
   }
 
   verVentasDelDia() {
-    // Funcionalidad pendiente
-    console.log('Ver ventas del día y devoluciones');
+    this.abrirVentasDelDia.emit();
   }
 }

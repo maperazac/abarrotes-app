@@ -28,6 +28,8 @@ import { ProductoComunComponent } from './modals/producto-comun/producto-comun.c
 import { EntradaDineroComponent } from './modals/entrada-dinero/entrada-dinero.component';
 import { SalidaDineroComponent } from './modals/salida-dinero/salida-dinero.component';
 import { BarraEstadoComponent } from './components/barra-estado/barra-estado.component';
+import { VentasDelDiaComponent } from './components/ventas-del-dia/ventas-del-dia.component';
+import { CorteCajaComponent } from './pages/corte-caja/corte-caja.component';
 
 @NgModule({
   declarations: [
@@ -51,6 +53,8 @@ import { BarraEstadoComponent } from './components/barra-estado/barra-estado.com
     EntradaDineroComponent,
     SalidaDineroComponent,
     BarraEstadoComponent,
+    VentasDelDiaComponent,
+    CorteCajaComponent,
   ],
   imports: [
     BrowserModule,

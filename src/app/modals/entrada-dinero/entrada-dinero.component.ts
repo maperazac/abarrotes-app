@@ -147,7 +147,7 @@ export class EntradaDineroComponent implements OnInit {
         fecha: Timestamp.fromDate(new Date()),
         cantidad: parseFloat(this.formularioEntrada.get('cantidad')?.value),
         detalle: this.formularioEntrada.get('detalle')?.value.trim(),
-        idCajero: '0' // TODO: obtener del usuario logueado
+        idCajero: localStorage.getItem('userId') || '0'
       };
 
       await this.entradasService.registrarEntrada(entrada);

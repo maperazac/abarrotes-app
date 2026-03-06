@@ -128,7 +128,16 @@ export class CobrarVentaComponent implements OnInit {
       ventaAFinalizar.totalArticulos = this.cantidadArticulos;
       ventaAFinalizar.totalPagadoCredito = "0", // Cuando se haga el flujo de pagos a creditos y registro de clientes se va a actualizar aqui.
       ventaAFinalizar.totalPagadoEfectivo = this.ventaTotalPesos // Cuando se haga el flujo de pagos a creditos y registro de clientes se va a actualizar aqui.
-      ventaAFinalizar.detalleProductos = this.productosVentaActual
+      ventaAFinalizar.detalleProductos = this.productosVentaActual.map(prod => ({
+        cantidad: prod.cantidad?.toString() || '0',
+        descripcion: prod.descripcion,
+        id: prod.id!,
+        precioVenta: prod.precioVenta.toString(),
+        codigoDeBarras: prod.codigoDeBarras,
+        departamento: prod.departamento,
+        importe: prod.importe?.toString() || '0',
+        seVende: prod.seVende
+      }))
       
       await this.ventasdbService.finalizarVenta(ventaAFinalizar, ventaAFinalizar.id);
 

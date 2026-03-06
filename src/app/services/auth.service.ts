@@ -70,6 +70,9 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('tokenExpiration');
     localStorage.removeItem('efectivoInicialEnCaja');
+    localStorage.removeItem('fechaInicioSesion');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('nombreUsuario');
     this.router.navigate(['/login']);
   }
 
@@ -85,6 +88,9 @@ export class AuthService {
     ).pipe(
       map(resp => {
         this.guardarToken(resp['idToken']);
+        // Guardar userId y nombreUsuario
+        localStorage.setItem('userId', resp['localId']);
+        localStorage.setItem('nombreUsuario', resp['email'].split('@')[0]);
         return resp;
       })
     );
@@ -102,6 +108,9 @@ export class AuthService {
     ).pipe(
       map(resp => {
         this.guardarToken(resp['idToken']);
+        // Guardar userId y nombreUsuario
+        localStorage.setItem('userId', resp['localId']);
+        localStorage.setItem('nombreUsuario', resp['email'].split('@')[0]);
         return resp;
       })
     );
@@ -112,6 +121,9 @@ export class AuthService {
     localStorage.setItem('token', idToken);
     
     localStorage.setItem('tokenExpiration', (Date.now() + 72000000).toString()); // Expira en:1 minuto (60000), 1 hora (3600000), 20 horas (72000000)
+    
+    // Guardar fecha de inicio de sesión para corte de cajero
+    localStorage.setItem('fechaInicioSesion', new Date().toISOString());
   }
 
   leerToken(){

@@ -125,5 +125,8 @@
   </div>
 </div>
 
+<!-- MODAL VENTAS DEL DIA -->
+<app-ventas-del-dia #modalVentasDelDia></app-ventas-del-dia>
+
 <!-- BARRA DE ESTADO -->
-<app-barra-estado></app-barra-estado>
+<app-barra-estado (abrirVentasDelDia)="abrirVentasDelDia()"></app-barra-estado>

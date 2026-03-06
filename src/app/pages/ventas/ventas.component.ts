@@ -72,9 +72,21 @@ export class VentasComponent implements OnInit {
         || event.code == 'Numpad4' || event.code == 'Numpad5' || event.code == 'Numpad6' || event.code == 'Numpad7'
         || event.code == 'Numpad8' || event.code == 'Numpad9')  && this.idVentaActivaInterno) {  // Al presionar numeros, poner focus en el cuadro de codigo de barras
       
-      // this.restarCantidad(this.rowSelected);
-      const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
-      inputPalabraClave.focus(); 
+      // Verificar si el usuario está escribiendo en un input o textarea
+      const elementoActivo = document.activeElement as HTMLElement;
+      const esInputOTextarea = elementoActivo && (
+        elementoActivo.tagName === 'INPUT' || 
+        elementoActivo.tagName === 'TEXTAREA' ||
+        elementoActivo.getAttribute('contenteditable') === 'true'
+      );
+      
+      // Solo mover el focus si NO está escribiendo en otro campo
+      if (!esInputOTextarea) {
+        const inputPalabraClave = this.el.nativeElement.querySelector("#codigoDeProducto");
+        if (inputPalabraClave) {
+          inputPalabraClave.focus();
+        }
+      }
     }
 
     // Usar para prevenir acciones combinadas como CTRL+P y poder usar comandos para controlar el sistema
@@ -96,6 +108,7 @@ export class VentasComponent implements OnInit {
   @ViewChild('modalProductoComun') modalProductoComun: ElementRef;
   @ViewChild('modalEntradaDinero') modalEntradaDinero: ElementRef;
   @ViewChild('modalSalidaDinero') modalSalidaDinero: ElementRef;
+  @ViewChild('modalVentasDelDia') modalVentasDelDia: any;
   modalBusquedaProductosAbierto = false;
   buscarProducto = new BuscarProductoModel();
   productosVentaActual: ProductoInterface[] = [];
@@ -893,7 +906,7 @@ export class VentasComponent implements OnInit {
       totalPagadoCredito: '0',
       cambio: '0',
       pagoCon: '0',
-      idCajero: '0',
+      idCajero: localStorage.getItem('userId') || '0',
       status: '0',
       seleccionada: 1,
       idCliente: '0',
@@ -909,6 +922,12 @@ export class VentasComponent implements OnInit {
     this.seleccionarComoVentaActiva(nuevaVenta.idTemp, this.idVentaActivaInterno) // Como no habia ninguna, esta nueva creada se marca como la venta activa (pestaña abierta)
     // this.ventasdbService.$idVentaActiva.emit(nuevaVenta.idTemp);
     this.cargandoVentas = false;
+  }
+
+  abrirVentasDelDia() {
+    if (this.modalVentasDelDia) {
+      this.modalVentasDelDia.abrir();
+    }
   }
 
   beep() {

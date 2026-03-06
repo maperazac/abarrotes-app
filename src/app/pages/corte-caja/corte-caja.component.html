@@ -1,0 +1,379 @@
+<div class="corte-caja-container">
+  <!-- Pantalla inicial: Selección de tipo de corte -->
+  <div class="seleccion-corte" *ngIf="!mostrarReporte && !cargando">
+    <div class="header-seleccion">
+      <div class="icono-caja">
+        <i class="fa fa-calculator" aria-hidden="true"></i>
+      </div>
+      <h1>Corte de Caja</h1>
+      <p class="subtitle">Selecciona el tipo de corte que deseas generar</p>
+    </div>
+
+    <div class="botones-corte">
+      <button class="btn-corte btn-cajero" (click)="hacerCorteCajero()">
+        <div class="icono-btn">
+          <i class="fa fa-user" aria-hidden="true"></i>
+        </div>
+        <h3>Corte de Cajero</h3>
+        <p>Desde inicio de sesión hasta ahora</p>
+        <span class="info-adicional">{{ nombreCajero }}</span>
+      </button>
+
+      <button class="btn-corte btn-dia" (click)="hacerCorteDia()">
+        <div class="icono-btn">
+          <i class="fa fa-calendar" aria-hidden="true"></i>
+        </div>
+        <h3>Corte del Día</h3>
+        <p>Todas las ventas del día completo</p>
+        <span class="info-adicional">00:00 - 23:59</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Indicador de carga -->
+  <div class="loading-overlay" *ngIf="cargando">
+    <div class="spinner"></div>
+    <p>Generando corte de caja...</p>
+  </div>
+
+  <!-- Reporte de corte -->
+  <div class="reporte-corte" *ngIf="mostrarReporte && !cargando">
+    <!-- Botones de acción fijos -->
+    <div class="acciones-reporte no-print">
+      <button class="btn-accion btn-volver" (click)="volverAInicio()">
+        <i class="fa fa-arrow-left" aria-hidden="true"></i>
+        Volver
+      </button>
+      <div class="acciones-grupo">
+        <button class="btn-accion btn-excel" (click)="exportarExcel()">
+          <i class="fa fa-file-excel-o" aria-hidden="true"></i>
+          Excel
+        </button>
+        <button class="btn-accion btn-imprimir" (click)="imprimir()">
+          <i class="fa fa-print" aria-hidden="true"></i>
+          Imprimir
+        </button>
+        <button class="btn-accion btn-email" (click)="enviarEmail()">
+          <i class="fa fa-envelope-o" aria-hidden="true"></i>
+          Email
+        </button>
+      </div>
+    </div>
+
+    <!-- Encabezado del reporte -->
+    <div class="encabezado-reporte">
+      <div class="logo-empresa">
+        <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+        <h2>Abarrotes App</h2>
+      </div>
+      <div class="info-corte">
+        <h1>{{ tipoCorte === 'cajero' ? 'Corte de Cajero' : 'Corte del Día' }}</h1>
+        <div class="detalles-corte">
+          <p><strong>Cajero:</strong> {{ nombreCajero }}</p>
+          <p><strong>Período:</strong> {{ formatearFecha(fechaInicio) }} - {{ formatearFecha(fechaFin) }}</p>
+          <p><strong>Generado:</strong> {{ formatearFecha(fechaGeneracion) }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen General (Cards) -->
+    <div class="resumen-general">
+      <div class="card-resumen card-dinero">
+        <div class="card-icono">
+          <i class="fa fa-money" aria-hidden="true"></i>
+        </div>
+        <div class="card-contenido">
+          <p class="card-label">Dinero en Caja</p>
+          <h2 class="card-valor">{{ formatearMoneda(dineroEnCaja) }}</h2>
+          <p class="card-detalle">Efectivo inicial: {{ formatearMoneda(efectivoInicial) }}</p>
+        </div>
+      </div>
+
+      <div class="card-resumen card-ventas">
+        <div class="card-icono">
+          <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+        </div>
+        <div class="card-contenido">
+          <p class="card-label">Ventas Totales</p>
+          <h2 class="card-valor">{{ formatearMoneda(resumenVentas.totalVentas) }}</h2>
+          <p class="card-detalle">{{ resumenVentas.cantidadVentas }} ventas</p>
+        </div>
+      </div>
+
+      <div class="card-resumen card-ganancia">
+        <div class="card-icono">
+          <i class="fa fa-line-chart" aria-hidden="true"></i>
+        </div>
+        <div class="card-contenido">
+          <p class="card-label">Ganancia</p>
+          <h2 class="card-valor">{{ formatearMoneda(ganancia) }}</h2>
+          <p class="card-detalle">Ventas - Devoluciones</p>
+        </div>
+      </div>
+
+      <div class="card-resumen card-articulos">
+        <div class="card-icono">
+          <i class="fa fa-cubes" aria-hidden="true"></i>
+        </div>
+        <div class="card-contenido">
+          <p class="card-label">Artículos Vendidos</p>
+          <h2 class="card-valor">{{ resumenVentas.articulosVendidos }}</h2>
+          <p class="card-detalle">Ticket promedio: {{ formatearMoneda(resumenVentas.ticketPromedio) }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detalle de Ventas -->
+    <div class="seccion-reporte">
+      <h3 class="titulo-seccion">
+        <i class="fa fa-list-alt" aria-hidden="true"></i>
+        Detalle de Ventas
+      </h3>
+      <div class="tabla-resumen">
+        <div class="fila-resumen">
+          <span class="label">Total de ventas:</span>
+          <span class="valor">{{ resumenVentas.cantidadVentas }}</span>
+        </div>
+        <div class="fila-resumen">
+          <span class="label">Ventas en efectivo:</span>
+          <span class="valor">{{ formatearMoneda(resumenVentas.totalVentasEfectivo) }}</span>
+        </div>
+        <div class="fila-resumen">
+          <span class="label">Ventas a crédito:</span>
+          <span class="valor">{{ formatearMoneda(resumenVentas.totalVentasCredito) }}</span>
+        </div>
+        <div class="fila-resumen destacada">
+          <span class="label">Total:</span>
+          <span class="valor">{{ formatearMoneda(resumenVentas.totalVentas) }}</span>
+        </div>
+      </div>
+
+      <div class="tabla-ventas" *ngIf="ventas.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Fecha/Hora</th>
+              <th>Artículos</th>
+              <th>Forma de Pago</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let venta of ventas">
+              <td>{{ venta.idTemp }}</td>
+              <td>{{ formatearFechaCorta(venta.fechaVentaFinalizada?.toDate()) }}</td>
+              <td>{{ calcularArticulosVenta(venta) }}</td>
+              <td>
+                <span class="badge" [ngClass]="venta.formaDePago === 1 ? 'badge-efectivo' : 'badge-credito'">
+                  {{ venta.formaDePago === 1 ? 'Efectivo' : 'Crédito' }}
+                </span>
+              </td>
+              <td class="text-right">{{ formatearMoneda(venta.total || '0') }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mensaje-vacio" *ngIf="ventas.length === 0">No hay ventas en este período</p>
+    </div>
+
+    <!-- Ventas por Departamento -->
+    <div class="seccion-reporte">
+      <h3 class="titulo-seccion titulo-colapsable" (click)="toggleVentasPorDepartamento()">
+        <i class="fa fa-pie-chart" aria-hidden="true"></i>
+        Ventas por Departamento
+        <i class="fa icono-toggle" [ngClass]="mostrarVentasPorDepartamento ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
+      </h3>
+      <div class="contenido-colapsable" *ngIf="mostrarVentasPorDepartamento">
+        <div class="tabla-departamentos" *ngIf="ventasPorDepartamento.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Departamento</th>
+                <th class="text-center">Artículos</th>
+                <th class="text-right">Total Vendido</th>
+                <th class="text-right">% del Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let dept of ventasPorDepartamento">
+                <td>
+                  <strong>{{ dept.nombre }}</strong>
+                </td>
+                <td class="text-center">{{ dept.cantidadArticulos }}</td>
+                <td class="text-right">{{ formatearMoneda(dept.totalVendido) }}</td>
+                <td class="text-right">
+                  <div class="porcentaje-container">
+                    <div class="barra-porcentaje">
+                      <div class="barra-relleno" [style.width.%]="dept.porcentaje"></div>
+                    </div>
+                    <span class="porcentaje-texto">{{ dept.porcentaje.toFixed(1) }}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mensaje-vacio" *ngIf="ventasPorDepartamento.length === 0">No hay ventas por departamento</p>
+      </div>
+    </div>
+
+    <!-- Entradas y Salidas -->
+    <div class="seccion-reporte seccion-doble">
+      <div class="columna-mitad">
+        <h3 class="titulo-seccion entradas">
+          <i class="fa fa-arrow-down" aria-hidden="true"></i>
+          Entradas de Efectivo
+        </h3>
+        <div class="tabla-resumen">
+          <div class="fila-resumen">
+            <span class="label">Efectivo inicial:</span>
+            <span class="valor positivo">{{ formatearMoneda(efectivoInicial) }}</span>
+          </div>
+          <div class="fila-resumen">
+            <span class="label">Ventas en efectivo:</span>
+            <span class="valor positivo">{{ formatearMoneda(resumenVentas.totalVentasEfectivo) }}</span>
+          </div>
+          <div class="fila-resumen">
+            <span class="label">Pagos de créditos:</span>
+            <span class="valor positivo">$0.00</span>
+            <span class="badge-pendiente">Pendiente</span>
+          </div>
+          <div class="fila-resumen">
+            <span class="label">Otras entradas ({{ entradas.length }}):</span>
+            <span class="valor positivo">{{ formatearMoneda(totalEntradas) }}</span>
+          </div>
+          <div class="fila-resumen destacada">
+            <span class="label">Total entradas:</span>
+            <span class="valor positivo">{{ formatearMoneda(efectivoInicial + resumenVentas.totalVentasEfectivo + totalEntradas) }}</span>
+          </div>
+        </div>
+        
+        <!-- Detalle de otras entradas -->
+        <div *ngIf="entradas.length > 0" style="margin-top: 1rem;">
+          <h4 style="font-size: 1rem; color: #4a5568; margin-bottom: 0.5rem;">Detalle de Otras Entradas:</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Detalle</th>
+                <th class="text-right">Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entrada of entradas">
+                <td>{{ formatearFechaCorta(entrada.fecha.toDate()) }}</td>
+                <td>{{ entrada.detalle }}</td>
+                <td class="text-right">{{ formatearMoneda(entrada.cantidad) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="columna-mitad">
+        <h3 class="titulo-seccion salidas">
+          <i class="fa fa-arrow-up" aria-hidden="true"></i>
+          Salidas de Efectivo
+        </h3>
+        <div class="tabla-resumen">
+          <div class="fila-resumen">
+            <span class="label">Devoluciones:</span>
+            <span class="valor negativo">{{ formatearMoneda(totalDevoluciones) }}</span>
+          </div>
+          <div class="fila-resumen">
+            <span class="label">Gastos/Salidas ({{ salidas.length }}):</span>
+            <span class="valor negativo">{{ formatearMoneda(totalSalidas) }}</span>
+          </div>
+          <div class="fila-resumen destacada">
+            <span class="label">Total salidas:</span>
+            <span class="valor negativo">{{ formatearMoneda(totalDevoluciones + totalSalidas) }}</span>
+          </div>
+        </div>
+        
+        <!-- Detalle de salidas -->
+        <div *ngIf="salidas.length > 0" style="margin-top: 1rem;">
+          <h4 style="font-size: 1rem; color: #4a5568; margin-bottom: 0.5rem;">Detalle de Gastos/Salidas:</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Detalle</th>
+                <th class="text-right">Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let salida of salidas">
+                <td>{{ formatearFechaCorta(salida.fecha.toDate()) }}</td>
+                <td>{{ salida.detalle }}</td>
+                <td class="text-right">{{ formatearMoneda(salida.cantidad) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Devoluciones -->
+    <div class="seccion-reporte">
+      <h3 class="titulo-seccion">
+        <i class="fa fa-undo" aria-hidden="true"></i>
+        Devoluciones
+      </h3>
+      <div class="tabla-devoluciones" *ngIf="devoluciones.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Fecha/Hora</th>
+              <th class="text-center">Artículos</th>
+              <th class="text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dev of devoluciones">
+              <td>{{ dev.folio }}</td>
+              <td>{{ formatearFechaCorta(dev.fecha) }}</td>
+              <td class="text-center">{{ dev.articulos }}</td>
+              <td class="text-right negativo">{{ formatearMoneda(dev.monto) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-right"><strong>Total Devoluciones:</strong></td>
+              <td class="text-right negativo"><strong>{{ formatearMoneda(totalDevoluciones) }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="mensaje-vacio" *ngIf="devoluciones.length === 0">No hay devoluciones en este período</p>
+    </div>
+
+    <!-- Pagos de Créditos (Pendiente) -->
+    <div class="seccion-reporte seccion-pendiente">
+      <h3 class="titulo-seccion">
+        <i class="fa fa-credit-card" aria-hidden="true"></i>
+        Pagos de Créditos
+        <span class="badge-pendiente">Pendiente de implementar</span>
+      </h3>
+      <p class="mensaje-info">
+        <i class="fa fa-info-circle" aria-hidden="true"></i>
+        Esta sección mostrará los abonos recibidos de clientes que compraron a crédito.
+      </p>
+    </div>
+
+    <!-- Pie del reporte -->
+    <div class="pie-reporte">
+      <div class="firma-cajero">
+        <div class="linea-firma"></div>
+        <p>{{ nombreCajero }}</p>
+        <p class="label-firma">Cajero</p>
+      </div>
+      <div class="firma-gerente">
+        <div class="linea-firma"></div>
+        <p>________________________</p>
+        <p class="label-firma">Gerente</p>
+      </div>
+    </div>
+  </div>
+</div>

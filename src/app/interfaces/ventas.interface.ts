@@ -18,14 +18,16 @@ export default interface VentaInterface {
     status: string; // el id de status de la venta (0 = en curso, 1 = completada, 2 = cancelada)
     seleccionada?: number; // indica con el 1 la venta que esta en pantalla al momento de cambiarse de pestañas, al volver a "ventas" se va a mostrar la venta que estaba. Al guardar la venta, este campo no se manda
     posicion?: string; // Es el orden o posicion en que se muestra cada tab en la interfaz. Sirve para que cuando se elimine un tab, las demas conserven su nombre de tab, usando el orden en el que fueron creadas.
-    detalleProductos?: detalleProducto[];
+    detalleProductos?: DetalleProducto[];
 }
 
-interface detalleProducto {
+export interface DetalleProducto {
     cantidad: string;
     descripcion: string; 
     id: string;
     precioVenta: string;
     codigoDeBarras: string;
     departamento: string;
+    importe: string;
+    seVende: number; // 1 = por unidad, 2 = por kilo/peso
 }

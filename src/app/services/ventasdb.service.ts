@@ -60,6 +60,18 @@ export class VentasdbService {
     return ventas;
   }
 
+  async obtenerVentasPorMultiplesStatusYPeriodo(statuses: string[], fechaInicio: Date, fechaFin: Date) {
+    const q = await query(
+      this.ventasCollectionRef, 
+      where('status', 'in', statuses), 
+      where('fechaVentaFinalizada', '>=', fechaInicio), 
+      where('fechaVentaFinalizada', '<=', fechaFin), 
+      orderBy('fechaVentaFinalizada', 'desc')
+    );
+    const ventas = await getDocs(q);
+    return ventas;
+  }
+
   // async getVentaActiva() {
   //   const q = query(this.ventasCollectionRef, where("seleccionada", "==", 1));
   //   const ventaActiva = await getDocs(q);
@@ -188,6 +200,27 @@ export class VentasdbService {
       console.error('Error al obtener última venta del día:', error);
       return null;
     }
+  }
+
+  async cancelarVenta(idVenta: string) {
+    const ventaRef = doc(this.firestore, `ventas/${idVenta}`);
+    return updateDoc(ventaRef, {
+      status: '2' // 2 = cancelada
+    });
+  }
+
+  async actualizarVentaDespuesDevolucion(
+    idVenta: string, 
+    detalleProductos: any[], 
+    nuevoTotal: string, 
+    nuevoTotalArticulos: string
+  ) {
+    const ventaRef = doc(this.firestore, `ventas/${idVenta}`);
+    return updateDoc(ventaRef, {
+      detalleProductos: detalleProductos,
+      total: nuevoTotal,
+      totalArticulos: nuevoTotalArticulos
+    });
   }
 
 }
