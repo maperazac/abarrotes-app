@@ -1,86 +1,168 @@
-<div class="text-left p-3 animated fadeIn faster ventas-container">
-    <h4>Reporte de productos vendidos</h4><br>
+<div class="ventas-periodo-container animated fadeIn faster">
+  <!-- Header -->
+  <div class="header-ventas-periodo">
+    <div class="titulo-seccion">
+      <i class="fa fa-chart-line"></i>
+      <h3>Reporte de productos vendidos</h3>
+    </div>
+  </div>
 
-    <div class="form-group row">
-      <form [formGroup]="selectPeriodo" class="col-sm-6 row">
-        <label class="col-form-label col-sm-2 text-right">Mostrar ventas de: </label>
-        <!-- <label class="col-form-label col-sm-4"> -->
-          <!-- <div class="custom-select col-sm-4"> -->
-            <select #periodo id="periodo" (change)="actualizarReporte(periodo.value)" class="custom-select col-sm-4"
-            formControlName="periodo"
-            name="periodo" >
-              <option value=1 [selected]>Hoy</option>
-              <option value=2>Ayer</option>
-              <option value=3>Esta semana</option>
-              <option value=4>La semana pasada</option>
-              <option value=5>Del mes</option>
-              <option value=6>Rango de fechas...</option>
-              <!-- <option value="2">Bebidas</option>
-              <option value="3">Frutas y verduras</option> -->
-            </select>
-          <!-- </div> -->
-        <!-- </label> -->
-      </form>
-      <div *ngIf="mostrarRangoFechas" class="col-sm-6 row">
-        <label class="col-form-label col-sm-2 text-right">Desde: </label>
-        <input
-          class="custom-select col-sm-4"
-          id="fechainicio"
-          type="date"
-          [(ngModel)]="rangoUsuario.fechainicio"
-          (change)="validarFechas()"
-        />
-      
-        <label class="col-form-label col-sm-2 text-right">Hasta: </label>
-        <input
-          class="custom-select col-sm-4"
-          id="fechafin"
-          type="date"
-          [(ngModel)]="rangoUsuario.fechafin"
-          (change)="validarFechas()"
-        />
-        <div *ngIf="errorFechas" style="color: red;" class="text-center">
-          {{ errorFechas }}
+  <!-- Barra de filtros -->
+  <div class="barra-filtros">
+    <!-- Línea de filtros principal -->
+    <div class="linea-filtros">
+      <!-- Selector de período -->
+      <div class="campo-filtro">
+        <label class="etiqueta-filtro">
+          <i class="fa fa-calendar"></i>
+          Mostrar ventas de:
+        </label>
+        <div class="select-wrapper">
+          <select #periodo 
+                  id="periodo" 
+                  (change)="actualizarReporte(periodo.value)" 
+                  class="select-filtro"
+                  [(ngModel)]="periodoSeleccionado"
+                  name="periodo">
+            <option value="1" [selected]>Hoy</option>
+            <option value="2">Ayer</option>
+            <option value="3">Esta semana</option>
+            <option value="4">La semana pasada</option>
+            <option value="5">Del mes</option>
+            <option value="6">Rango de fechas...</option>
+          </select>
+          <i class="fa fa-chevron-down icono-select"></i>
         </div>
       </div>
-    </div>  
 
-    <div class="table-container">
-      <table class="table tabla-scroll">
-        <thead class="thead-light">
+      <!-- Rango de fechas personalizado (en la misma línea) -->
+      <div *ngIf="mostrarRangoFechas" class="rango-fechas">
+        <div class="campo-fecha">
+          <label class="etiqueta-fecha">
+            <i class="fa fa-calendar-check"></i>
+            Desde:
+          </label>
+          <input class="input-fecha"
+                 id="fechainicio"
+                 type="date"
+                 [(ngModel)]="rangoUsuario.fechainicio"
+                 [ngModelOptions]="{standalone: true}"
+                 (change)="validarFechas()">
+        </div>
+
+        <div class="campo-fecha">
+          <label class="etiqueta-fecha">
+            <i class="fa fa-calendar-times"></i>
+            Hasta:
+          </label>
+          <input class="input-fecha"
+                 id="fechafin"
+                 type="date"
+                 [(ngModel)]="rangoUsuario.fechafin"
+                 [ngModelOptions]="{standalone: true}"
+                 (change)="validarFechas()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensaje de error de fechas -->
+    <div *ngIf="errorFechas" class="mensaje-error-fechas">
+      <i class="fa fa-exclamation-triangle"></i>
+      {{ errorFechas }}
+    </div>
+
+    <!-- Mensaje informativo cuando se selecciona rango de fechas -->
+    <div *ngIf="mostrarRangoFechas && !rangoUsuario.fechainicio && !rangoUsuario.fechafin && !errorFechas" class="mensaje-info-fechas">
+      <i class="fa fa-info-circle"></i>
+      Seleccione ambas fechas para ver los resultados del período personalizado.
+    </div>
+  </div>
+
+  <!-- Contenedor de la tabla -->
+  <div class="contenedor-tabla">
+    <table class="tabla-ventas">
+      <thead>
+        <tr>
+          <th class="columna-ordenable" (click)="ordenar(1)">
+            <span class="contenido-header">
+              Código de barras
+              <i *ngIf="ordenadoPor == 1 && ordenAsc" class="fa fa-sort-down icono-orden"></i>
+              <i *ngIf="ordenadoPor == 1 && !ordenAsc" class="fa fa-sort-up icono-orden"></i>
+              <i *ngIf="ordenadoPor != 1" class="fa fa-sort icono-orden inactivo"></i>
+            </span>
+          </th>
+          <th class="columna-ordenable" (click)="ordenar(2)">
+            <span class="contenido-header">
+              Descripción del producto
+              <i *ngIf="ordenadoPor == 2 && ordenAsc" class="fa fa-sort-down icono-orden"></i>
+              <i *ngIf="ordenadoPor == 2 && !ordenAsc" class="fa fa-sort-up icono-orden"></i>
+              <i *ngIf="ordenadoPor != 2" class="fa fa-sort icono-orden inactivo"></i>
+            </span>
+          </th>
+          <th class="columna-ordenable columna-numero" (click)="ordenar(3)">
+            <span class="contenido-header">
+              Cantidad
+              <i *ngIf="ordenadoPor == 3 && ordenAsc" class="fa fa-sort-down icono-orden"></i>
+              <i *ngIf="ordenadoPor == 3 && !ordenAsc" class="fa fa-sort-up icono-orden"></i>
+              <i *ngIf="ordenadoPor != 3" class="fa fa-sort icono-orden inactivo"></i>
+            </span>
+          </th>
+          <th class="columna-ordenable columna-numero" (click)="ordenar(4)">
+            <span class="contenido-header">
+              Precio Unitario
+              <i *ngIf="ordenadoPor == 4 && ordenAsc" class="fa fa-sort-down icono-orden"></i>
+              <i *ngIf="ordenadoPor == 4 && !ordenAsc" class="fa fa-sort-up icono-orden"></i>
+              <i *ngIf="ordenadoPor != 4" class="fa fa-sort icono-orden inactivo"></i>
+            </span>
+          </th>
+          <th class="columna-ordenable columna-numero" (click)="ordenar(6)">
+            <span class="contenido-header">
+              Total Venta
+              <i *ngIf="ordenadoPor == 6 && ordenAsc" class="fa fa-sort-down icono-orden"></i>
+              <i *ngIf="ordenadoPor == 6 && !ordenAsc" class="fa fa-sort-up icono-orden"></i>
+              <i *ngIf="ordenadoPor != 6" class="fa fa-sort icono-orden inactivo"></i>
+            </span>
+          </th>
+          <th class="columna-ordenable" (click)="ordenar(5)">
+            <span class="contenido-header">
+              Departamento
+              <i *ngIf="ordenadoPor == 5 && ordenAsc" class="fa fa-sort-down icono-orden"></i>
+              <i *ngIf="ordenadoPor == 5 && !ordenAsc" class="fa fa-sort-up icono-orden"></i>
+              <i *ngIf="ordenadoPor != 5" class="fa fa-sort icono-orden inactivo"></i>
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody *ngIf="ventasDelPeriodo && ventasDelPeriodo.length > 0; else sinResultados">
+        <tr *ngFor="let producto of ventasDelPeriodo; let i = index" class="fila-producto">
+          <td class="columna-codigo">{{producto.codigoDeBarras}}</td>
+          <td class="columna-descripcion">{{producto.descripcion}}</td>
+          <td class="columna-numero">{{producto.cantidad}}</td>
+          <td class="columna-numero columna-precio">{{producto.precioVenta | currency: '$'}}</td>
+          <td class="columna-numero columna-total">{{producto.precioVenta * producto.cantidad | currency: '$'}}</td>
+          <td class="columna-departamento">
+            <span class="badge-departamento">{{producto.departamento}}</span>
+          </td>
+        </tr>
+      </tbody>
+      <ng-template #sinResultados>
+        <tbody>
           <tr>
-            <th scope="col" class="pointer position-relative" (click)="ordenar(1)">Código de barras <i *ngIf="ordenadoPor == 1 && this.ordenAsc" class="fa fa-arrow-circle-down text-primary flechasOrden"></i><i *ngIf="ordenadoPor == 1 && !this.ordenAsc" class="fa fa-arrow-circle-up text-primary flechasOrden"></i></th>
-            <th scope="col" class="pointer position-relative" (click)="ordenar(2)">Descripción del producto <i *ngIf="ordenadoPor == 2 && this.ordenAsc" class="fa fa-arrow-circle-down text-primary flechasOrden"></i><i *ngIf="ordenadoPor == 2 && !this.ordenAsc" class="fa fa-arrow-circle-up text-primary flechasOrden"></i></th>
-            <th scope="col" class="pointer position-relative" (click)="ordenar(3)">Cantidad <i *ngIf="ordenadoPor == 3 && this.ordenAsc" class="fa fa-arrow-circle-down text-primary flechasOrden"></i><i *ngIf="ordenadoPor == 3 && !this.ordenAsc" class="fa fa-arrow-circle-up text-primary flechasOrden"></i></th>
-            <th scope="col" class="pointer position-relative" (click)="ordenar(4)">Precio Unitario <i *ngIf="ordenadoPor == 4 && this.ordenAsc" class="fa fa-arrow-circle-down text-primary flechasOrden"></i><i *ngIf="ordenadoPor == 4 && !this.ordenAsc" class="fa fa-arrow-circle-up text-primary flechasOrden"></i></th>
-            <th scope="col" class="pointer position-relative" (click)="ordenar(6)">Total Venta <i *ngIf="ordenadoPor == 6 && this.ordenAsc" class="fa fa-arrow-circle-down text-primary flechasOrden"></i><i *ngIf="ordenadoPor == 6 && !this.ordenAsc" class="fa fa-arrow-circle-up text-primary flechasOrden"></i></th>
-            <th scope="col" class="pointer position-relative" (click)="ordenar(5)">Departamento <i *ngIf="ordenadoPor == 5 && this.ordenAsc" class="fa fa-arrow-circle-down text-primary flechasOrden"></i><i *ngIf="ordenadoPor == 5 && !this.ordenAsc" class="fa fa-arrow-circle-up text-primary flechasOrden"></i></th>
-          </tr>
-        </thead>
-        <tbody *ngIf="ventasDelPeriodo && ventasDelPeriodo.length > 0; else sinResultados">
-          <tr *ngFor="let producto of ventasDelPeriodo; let i = index" >
-            <th scope="row">{{producto.codigoDeBarras}}</th>
-            <td>{{producto.descripcion}}</td>
-            <td>{{producto.cantidad}}</td>
-            <td>{{producto.precioVenta | currency: '$'}}</td>
-            <td>{{producto.precioVenta * producto.cantidad | currency: '$'}}</td>
-            <td>{{producto.departamento}}</td>
+            <td colspan="6" class="celda-estado">
+              <div *ngIf="cargandoResultados; else noResults" class="estado-cargando">
+                <i class="fa fa-spinner fa-pulse"></i>
+                <p>Cargando resultados...</p>
+              </div>
+              <ng-template #noResults>
+                <div class="estado-vacio">
+                  <i class="fa fa-inbox"></i>
+                  <p>No hay resultados para el período seleccionado</p>
+                </div>
+              </ng-template>
+            </td>
           </tr>
         </tbody>
-        <ng-template #sinResultados>
-          <tbody>
-            <tr>
-              <td *ngIf="cargandoResultados; else noResults" colspan="5" class="text-center pt-5">
-                <i class="fa fa-spinner fa-pulse"></i> Cargando resultados...
-              </td>
-              <ng-template #noResults>
-                <td colspan="5" class="text-center pt-5">
-                  <i>No hay resultados</i>
-                </td>
-              </ng-template>
-            </tr>
-          </tbody>
-        </ng-template>
-      </table>
-    </div>
+      </ng-template>
+    </table>
+  </div>
 </div>

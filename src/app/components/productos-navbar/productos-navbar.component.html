@@ -1,9 +1,45 @@
-<div class="d-flex animated fadeIn faster bg-light p-3">
-    <button [ngClass]="botonSeleccionado == 1 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="navegarProductos(1)"><i class="fa fa-plus-square" aria-hidden="true"></i> Nuevo</button>
-    <button [ngClass]="botonSeleccionado == 2 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(2)"><i class="fa fa-edit" aria-hidden="true"></i> Modificar</button>
-    <button [ngClass]="botonSeleccionado == 3 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="navegarProductos(3)"><i class="fa fa-minus-square" aria-hidden="true"></i> Eliminar</button>
-    <div style="border-right: solid 1px gainsboro;" class="mr-3"></div>
-    <button [ngClass]="botonSeleccionado == 4 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="navegarProductos(4)"><i class="fa fa-cubes" aria-hidden="true"></i> Departamentos</button>
-    <button [ngClass]="botonSeleccionado == 5 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="navegarProductos(5)"><i class="fa fa-calendar" aria-hidden="true"></i> Ventas por periodo</button>
+<div class="productos-navbar-container animated fadeIn faster">
+  <div class="botones-grupo">
+    <button 
+      class="btn-navbar" 
+      [ngClass]="{'btn-activo': botonSeleccionado == 1}"
+      (click)="navegarProductos(1)">
+      <i class="fa fa-plus-square icono"></i>
+      <span class="texto">Nuevo</span>
+    </button>
+    
+    <button 
+      class="btn-navbar" 
+      [ngClass]="{'btn-activo': botonSeleccionado == 2}"
+      (click)="emitirEvento(2)">
+      <i class="fa fa-edit icono"></i>
+      <span class="texto">Modificar</span>
+    </button>
+    
+    <button 
+      class="btn-navbar btn-eliminar-nav" 
+      [ngClass]="{'btn-activo': botonSeleccionado == 3}"
+      (click)="navegarProductos(3)">
+      <i class="fa fa-minus-square icono"></i>
+      <span class="texto">Eliminar</span>
+    </button>
+    
+    <div class="separador-vertical"></div>
+    
+    <button 
+      class="btn-navbar" 
+      [ngClass]="{'btn-activo': botonSeleccionado == 4}"
+      (click)="navegarProductos(4)">
+      <i class="fa fa-cubes icono"></i>
+      <span class="texto">Departamentos</span>
+    </button>
+    
+    <button 
+      class="btn-navbar" 
+      [ngClass]="{'btn-activo': botonSeleccionado == 5}"
+      (click)="navegarProductos(5)">
+      <i class="fa fa-calendar icono"></i>
+      <span class="texto">Ventas por periodo</span>
+    </button>
   </div>
-  <hr>
+</div>

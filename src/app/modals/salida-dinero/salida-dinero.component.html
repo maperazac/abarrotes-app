@@ -1,12 +1,21 @@
 <div class="salida-dinero-container">
-  <h3><i class="fa fa-arrow-circle-up"></i> Salida de Dinero</h3>
+  <!-- Header -->
+  <div class="header-modal">
+    <div class="icono-header">
+      <i class="fa fa-arrow-circle-up"></i>
+    </div>
+    <h3 class="titulo-header">Salida de Dinero</h3>
+  </div>
   
-  <form [formGroup]="formularioSalida">
-    <div class="form-group">
-      <label for="cantidadSalida">Cantidad ($)</label>
+  <form [formGroup]="formularioSalida" class="form-modal">
+    <div class="campo-formulario">
+      <label for="cantidadSalida" class="label-campo">
+        <i class="fa fa-dollar"></i>
+        Cantidad
+      </label>
       <input 
         type="number" 
-        class="form-control" 
+        class="input-campo" 
         id="cantidadSalida" 
         formControlName="cantidad"
         placeholder="0.00"
@@ -15,60 +24,67 @@
         autofocus>
     </div>
 
-    <div class="form-group mt-3">
-      <label for="detalleSalida">Detalles</label>
+    <div class="campo-formulario">
+      <label for="detalleSalida" class="label-campo">
+        <i class="fa fa-pencil"></i>
+        Detalles
+      </label>
       <textarea 
-        class="form-control" 
+        class="textarea-campo" 
         id="detalleSalida" 
         formControlName="detalle"
         rows="3"
         maxlength="200"
         placeholder="Describe el motivo de la salida de dinero"></textarea>
-      <small class="text-muted">{{formularioSalida.get('detalle')?.value?.length || 0}}/200 caracteres</small>
+      <small class="contador-caracteres">{{formularioSalida.get('detalle')?.value?.length || 0}}/200 caracteres</small>
     </div>
 
-    <div class="botones-container mt-4">
+    <div class="botones-accion">
       <button 
         type="button" 
-        class="btn btn-primary" 
+        class="btn-modal-accion btn-guardar" 
         (click)="guardarSalida()"
         [disabled]="formularioSalida.invalid || guardando">
-        <span class="functionKeys">F2</span>
+        <span class="tecla-modal">F2</span>
         <i *ngIf="guardando" class="fa fa-spinner fa-pulse"></i>
         <i *ngIf="!guardando" class="fa fa-save"></i>
-        Guardar
+        <span>Guardar</span>
       </button>
       <button 
         type="button" 
-        class="btn btn-secondary" 
+        class="btn-modal-accion btn-cancelar-accion" 
         (click)="cerrarModal()"
         [disabled]="guardando">
-        <span class="functionKeys">ESC</span> <i class="fa fa-times"></i> Cancelar
+        <span class="tecla-modal">ESC</span>
+        <i class="fa fa-times"></i>
+        <span>Cancelar</span>
       </button>
     </div>
   </form>
 
-  <hr class="my-4">
+  <div class="separador"></div>
 
   <div class="salidas-pasadas-section">
     <button 
       type="button" 
-      class="btn btn-outline-primary btn-block mb-3" 
+      class="btn-toggle-lista" 
       (click)="toggleMostrarSalidas()">
-      <i class="fa" [ngClass]="mostrarSalidas ? 'fa-eye-slash' : 'fa-eye'"></i>
-      {{ mostrarSalidas ? 'Ocultar salidas' : 'Ver salidas pasadas' }} ({{ salidasPasadas.length }})
+      <i class="fa" [ngClass]="mostrarSalidas ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+      <span>{{ mostrarSalidas ? 'Ocultar salidas' : 'Ver salidas pasadas' }}</span>
+      <span class="badge-contador">{{ salidasPasadas.length }}</span>
     </button>
 
-    <div *ngIf="mostrarSalidas" class="salidas-lista animated fadeIn">
-      <div *ngIf="salidasPasadas.length === 0" class="text-center text-muted py-3">
-        <i class="fa fa-inbox"></i> No hay salidas registradas hoy
+    <div *ngIf="mostrarSalidas" class="lista-registros animated fadeIn">
+      <div *ngIf="salidasPasadas.length === 0" class="mensaje-vacio">
+        <i class="fa fa-inbox"></i>
+        <span>No hay salidas registradas hoy</span>
       </div>
 
       <div *ngIf="salidasPasadas.length > 0">
         <div 
           *ngFor="let salida of salidasPasadas; let i = index" 
-          class="salida-item"
-          [ngClass]="{'selected': salida.id === salidaSeleccionada, 'even': i % 2 === 0, 'odd': i % 2 !== 0}"
+          class="item-registro item-salida"
+          [ngClass]="{'selected': salida.id === salidaSeleccionada}"
           (click)="seleccionarSalida(salida.id!)">
           
           <input 
@@ -77,36 +93,35 @@
             [value]="salida.id" 
             name="salidaRadio"
             [checked]="salida.id === salidaSeleccionada"
-            class="salida-radio">
+            class="radio-hidden">
           
-          <label [for]="salida.id" class="salida-label">
-            <div class="salida-info">
-              <div class="salida-cantidad">
+          <label [for]="salida.id" class="label-registro">
+            <div class="info-registro">
+              <div class="cantidad-registro">
+                <i class="fa fa-arrow-up"></i>
                 <strong>${{ salida.cantidad.toFixed(2) }}</strong>
               </div>
-              <div class="salida-detalle">
+              <div class="detalle-registro">
                 {{ salida.detalle }}
               </div>
-              <div class="salida-fecha">
-                <small class="text-muted">
-                  <i class="fa fa-clock-o"></i> 
-                  {{ salida.fecha.toDate() | date:'short' }}
-                </small>
+              <div class="fecha-registro">
+                <i class="fa fa-clock-o"></i> 
+                {{ salida.fecha.toDate() | date:'short' }}
               </div>
             </div>
           </label>
         </div>
 
-        <div class="mt-3">
+        <div class="btn-eliminar-container">
           <button 
             type="button" 
-            class="btn btn-danger btn-sm" 
+            class="btn-eliminar-registro" 
             (click)="confirmarEliminarSalida()"
             [disabled]="!salidaSeleccionada || eliminando">
-            <span class="functionKeys">DEL</span>
+            <span class="tecla-modal">DEL</span>
             <i *ngIf="eliminando" class="fa fa-spinner fa-pulse"></i>
             <i *ngIf="!eliminando" class="fa fa-trash"></i>
-            Cancelar salida seleccionada
+            <span>Cancelar salida seleccionada</span>
           </button>
         </div>
       </div>

@@ -143,6 +143,7 @@ export class VentasdbService {
       fechaVentaFinalizada: venta.fechaVentaFinalizada,
       formaDePago: venta.formaDePago,
       // idCajero: venta.idCajero,  // Se debe insertar desde que se crea la nueva venta. Aqui ya no se actualiza.
+      nombreCajero: venta.nombreCajero || localStorage.getItem('nombreUsuario') || 'Desconocido', // Guardar el nombre del cajero
       idCliente: venta.idCliente,
       pagoCon: venta.pagoCon,
       seleccionada: 0, // Automaticamente se le quita el status de seleccionada.

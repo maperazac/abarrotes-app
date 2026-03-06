@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
 import { VentasdbService } from 'src/app/services/ventasdb.service';
 import VentaInterface from '../../interfaces/ventas.interface';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
@@ -11,16 +10,11 @@ import DepartamentoInterface from 'src/app/interfaces/deparamentos.interface';
   styleUrls: ['./ventas-por-periodo.component.scss']
 })
 export class VentasPorPeriodoComponent implements OnInit {
-  selectPeriodo: FormGroup;
-  
+  periodoSeleccionado = '1';
 
   constructor(private ventasdbService: VentasdbService,
               private departamentosService: DepartamentosService
-  ) { 
-    this.selectPeriodo = new FormGroup({
-      periodo: new FormControl('1')
-    });
-  }
+  ) { }
 
   ventasDelPeriodo;
   departamentos: DepartamentoInterface[] = [];
@@ -42,16 +36,26 @@ export class VentasPorPeriodoComponent implements OnInit {
   validarFechas() {
     const { fechainicio, fechafin } = this.rangoUsuario;
 
+    // Limpiar error previo
+    this.errorFechas = '';
+
+    // Si ambas fechas están seleccionadas, validar
     if (fechainicio && fechafin) {
-      const inicio = new Date(fechainicio);
-      const fin = new Date(fechafin);
+      const inicio = new Date(fechainicio + 'T00:00:00');
+      const fin = new Date(fechafin + 'T00:00:00');
 
       if (inicio > fin) {
         this.errorFechas = 'La fecha de inicio no puede ser mayor que la fecha de fin.';
-      } else {
-        this.errorFechas = ''; // No hay errores
-        this.actualizarReporte("6");
+        this.ventasDelPeriodo = [];
+        return;
       }
+      
+      // Si las fechas son válidas, actualizar el reporte
+      this.actualizarReporte("6");
+    } else if (fechainicio || fechafin) {
+      // Si solo una fecha está seleccionada, mostrar mensaje
+      this.errorFechas = 'Debe seleccionar ambas fechas para filtrar.';
+      this.ventasDelPeriodo = [];
     }
   }
 
@@ -59,11 +63,33 @@ export class VentasPorPeriodoComponent implements OnInit {
     const { fechainicio, fechafin } = this.rangoUsuario;
     this.ventasDelPeriodo = [];
     this.errorFechas = '';
+    this.mostrarRangoFechas = false;
+    this.ordenadoPor = 0;
+
+    // Si es rango de fechas, solo mostrar los inputs y salir
+    if (periodo === "6") {
+      this.mostrarRangoFechas = true;
+      
+      // Si no hay fechas seleccionadas, no hacer la consulta
+      if (!fechainicio || !fechafin) {
+        this.cargandoResultados = false;
+        return;
+      }
+      
+      // Validar que la fecha de inicio no sea mayor que la de fin
+      const inicio = new Date(fechainicio + 'T00:00:00');
+      const fin = new Date(fechafin + 'T00:00:00');
+      
+      if (inicio > fin) {
+        this.errorFechas = 'La fecha de inicio no puede ser mayor que la fecha de fin.';
+        this.cargandoResultados = false;
+        return;
+      }
+    }
+
     this.cargandoResultados = true;
     let fechaInicio: Date;
     let fechaFin: Date;
-    this.mostrarRangoFechas = false;
-    this.ordenadoPor = 0;
 
     const now = new Date();
     const inicioDia = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -103,36 +129,26 @@ export class VentasPorPeriodoComponent implements OnInit {
         break;
   
       case "6": // Rango definido por el usuario
-        this.mostrarRangoFechas = true;
-        if (fechainicio && fechafin) {
-          const [yearInicio, monthInicio, dayInicio] = fechainicio.split('-').map(Number);
-          const fechaInicioDate = new Date(yearInicio, monthInicio - 1, dayInicio);
-          fechaInicioDate.setHours(0, 0, 0, 0); // 00:00:00 del día seleccionado
+        const [yearInicio, monthInicio, dayInicio] = fechainicio.split('-').map(Number);
+        const fechaInicioDate = new Date(yearInicio, monthInicio - 1, dayInicio);
+        fechaInicioDate.setHours(0, 0, 0, 0); // 00:00:00 del día seleccionado
 
-          const [yearFin, monthFin, dayFin] = fechafin.split('-').map(Number);
-          const fechaFinDate = new Date(yearFin, monthFin - 1, dayFin);
-          fechaFinDate.setHours(23, 59, 59, 999); // 23:59:59 del día seleccionado
+        const [yearFin, monthFin, dayFin] = fechafin.split('-').map(Number);
+        const fechaFinDate = new Date(yearFin, monthFin - 1, dayFin);
+        fechaFinDate.setHours(23, 59, 59, 999); // 23:59:59 del día seleccionado
 
-          fechaInicio = fechaInicioDate; // Convertir a timestamp
-          fechaFin = fechaFinDate; // Convertir a timestamp
-        } else {
-          // throw new Error('Debe proporcionar un rango de fechas para el período.');
-          // this.errorFechas = 'Debe proporcionar un rango de fechas para el período.';
-        }
+        fechaInicio = fechaInicioDate;
+        fechaFin = fechaFinDate;
         break;
   
       default:
+        this.cargandoResultados = false;
         throw new Error('Período no válido.');
     }
 
-    // Convertir fechas a Timestamp si necesitas usarlas con Firestore
-    // const fechainicioTimestamp = fechaInicio.getTime();
-    // const fechafinTimestamp = fechaFin.getTime();
-
-    if ((fechainicio && fechafin) || periodo !== "6") {
-      const ventas = await this.ventasPorStatusYPeriodo("1", fechaInicio, fechaFin); // Se obtienen todas las ventas completadas (status = 1) de la base de datos. En un futuro, cuando haya muchos usuarios, las ventas se van a filtrar por idNegocio para que se obtengan solo las de ese negocio
-      this.ventasDelPeriodo = this.conteoProductos(ventas);
-    }    
+    // Realizar la consulta
+    const ventas = await this.ventasPorStatusYPeriodo("1", fechaInicio, fechaFin);
+    this.ventasDelPeriodo = this.conteoProductos(ventas);
     this.cargandoResultados = false;
   }
 

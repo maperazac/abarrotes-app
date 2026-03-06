@@ -413,8 +413,12 @@ export class VentasComponent implements OnInit {
           html: this.modalBusquedaProductos.nativeElement,
           focusConfirm: false,
           allowEscapeKey: false,
-          width: '1000px',
+          width: '900px',
           showConfirmButton: false,
+          customClass: {
+            popup: 'modal-busqueda-sin-padding',
+            htmlContainer: 'modal-busqueda-html-container'
+          },
           didOpen:() => {
             const popup = Swal.getPopup()!
             this.busquedaInput = popup.querySelector('#palabraClave') as HTMLInputElement
@@ -453,6 +457,10 @@ export class VentasComponent implements OnInit {
         width: '700px',
         showConfirmButton: false,
         showCancelButton: false,
+        customClass: {
+          popup: 'modal-busqueda-sin-padding',
+          htmlContainer: 'modal-busqueda-html-container'
+        },
         didOpen: () => {
           const popup = Swal.getPopup()!
           const cantidadInput = popup.querySelector('#cantidad') as HTMLInputElement
@@ -478,6 +486,10 @@ export class VentasComponent implements OnInit {
         width: '700px',
         showConfirmButton: false,
         showCancelButton: false,
+        customClass: {
+          popup: 'modal-busqueda-sin-padding',
+          htmlContainer: 'modal-busqueda-html-container'
+        },
         didOpen: () => {
           const popup = Swal.getPopup()!
           const cantidadInput = popup.querySelector('#cantidadSalida') as HTMLInputElement
@@ -544,7 +556,7 @@ export class VentasComponent implements OnInit {
 
   redondearImporte(precioVenta: number, cantidad: number) {
     let importe = (precioVenta * cantidad);
-    let precioRedoneado = Math.ceil(importe * 2) / 2;
+    let precioRedoneado = Math.ceil(importe); // Redondea siempre hacia arriba al siguiente entero
     return precioRedoneado;
   }
 
@@ -907,6 +919,7 @@ export class VentasComponent implements OnInit {
       cambio: '0',
       pagoCon: '0',
       idCajero: localStorage.getItem('userId') || '0',
+      nombreCajero: localStorage.getItem('nombreUsuario') || 'Desconocido',
       status: '0',
       seleccionada: 1,
       idCliente: '0',

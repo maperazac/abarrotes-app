@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, OnDestroy, Output, ViewChild } from '@angular/core';
 import { ProductosService } from '../../services/productos.service';
 import { ProductoModel } from 'src/app/models/producto.model';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
@@ -12,7 +12,7 @@ import { TeclasService } from 'src/app/services/teclas.service';
   templateUrl: './buscar-productos.component.html',
   styleUrls: ['./buscar-productos.component.scss']
 })
-export class BuscarProductosComponent implements OnInit {
+export class BuscarProductosComponent implements OnInit, OnDestroy {
   @Input() esVenta:boolean;
   @Output()
   // productoAEditar = new EventEmitter<string>();
@@ -57,6 +57,10 @@ export class BuscarProductosComponent implements OnInit {
               private teclas: TeclasService) { }
 
   ngOnInit() {
+    // Asegurar que el modal esté cerrado al inicializar
+    this.display = "none";
+    this.ProductoSeleccionado = <ProductoInterface>{};
+    
     const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
     inputPalabraClave.focus();
 
@@ -80,6 +84,12 @@ export class BuscarProductosComponent implements OnInit {
     // })
     this.actualizarProductos();
 
+  }
+
+  ngOnDestroy() {
+    // Limpiar estado al destruir el componente
+    this.display = "none";
+    this.ProductoSeleccionado = <ProductoInterface>{};
   }
 
   actualizarProductos () {
@@ -137,41 +147,6 @@ export class BuscarProductosComponent implements OnInit {
       this.productosTemp = this.productos;
     }
   }
-
-
-  eliminarProducto(producto: ProductoInterface) {
-    const swalWithBootstrapButtons = Swal.mixin({
-      customClass: {
-        confirmButton: "btn btn-secondary w-100",
-        cancelButton: "btn btn-primary w-100 mb-3"
-      },
-      buttonsStyling: false
-    });
-    swalWithBootstrapButtons.fire({
-      title: "¿Deseas eliminar este producto?",
-      text: "Se eliminarán permanentemente todos los registros e inventarios asociados a este producto",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí",
-      cancelButtonText: "No",
-      reverseButtons: true
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.productosService.borrarProducto(producto),
-        swalWithBootstrapButtons.fire({
-          title: "Eliminado",
-          text: "Se ha eliminado el producto",
-          icon: "success"
-        });
-      } else 
-      {
-        // Swal.fire({
-        //   html: "ok"
-        // })
-      }
-    });
-  }
-
   setProductoSeleccionado(producto: ProductoInterface) {
     // console.log(id)
     let prodSel = Object.keys(this.ProductoSeleccionado).length != 0 ? true : false;
@@ -197,9 +172,18 @@ export class BuscarProductosComponent implements OnInit {
     Swal.close();
   }
 
-  openModalConfirmarBorrar() {
+  openModalConfirmarBorrar(producto?: ProductoInterface) {
+    // Si se pasa un producto, establecerlo como seleccionado
+    if (producto) {
+      this.ProductoSeleccionado = producto;
+    }
+    
+    // Verificar que hay un producto seleccionado
+    if (!this.ProductoSeleccionado || Object.keys(this.ProductoSeleccionado).length === 0) {
+      return;
+    }
+    
     setTimeout(() => {
-      console.log(this.ProductoSeleccionado)
       this.display = "block";
     }, 100);
   }
@@ -208,9 +192,20 @@ export class BuscarProductosComponent implements OnInit {
     this.display = "none";
   }
   onCloseHandledConfirmarBorrar() {
-    this.productosService.borrarProducto(this.ProductoSeleccionado)
-    this.display = "none";
-    this.actualizarProductos();
+    this.productosService.borrarProducto(this.ProductoSeleccionado).then(() => {
+      this.display = "none";
+      this.ProductoSeleccionado = <ProductoInterface>{}; // Limpiar selección
+      this.actualizarProductos();
+      
+      // Mensaje de éxito
+      Swal.fire({
+        title: 'Producto eliminado',
+        text: 'El producto se ha eliminado correctamente',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    });
   }
 
   navegacionConFlechas(codigo: string) {

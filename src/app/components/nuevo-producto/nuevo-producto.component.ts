@@ -28,6 +28,7 @@ export class NuevoProductoComponent implements OnInit {
   deptos: DepartamentoInterface[] = [];
   nombreNuevoDepartamento: string;
   formularioInvalido = false;
+  codigoOriginal: string = ''; // Para guardar el código original al modificar
 
   constructor( private productosService: ProductosService, 
                private el: ElementRef,
@@ -35,7 +36,7 @@ export class NuevoProductoComponent implements OnInit {
                private router: Router,
                private departamentosService: DepartamentosService) {
     this.formulario = new FormGroup({
-      // id: new FormControl(),
+      id: new FormControl(),
       codigoDeBarras: new FormControl(),
       descripcion: new FormControl(),
       seVende: new FormControl(),
@@ -50,12 +51,14 @@ export class NuevoProductoComponent implements OnInit {
   ngOnInit() {    
     this.sub = this.route.params.subscribe(params => {
       // debugger;
-      this.id = +params['id']; // (+) converts string 'id' to a number
+      const codigoBarras = params['id']; // Obtener el código de barras (puede ser número o string)
 
-      if(!Number.isNaN(this.id)) {
+      // Si existe un código de barras en los parámetros, es una modificación
+      if(codigoBarras) {
         this.esModificacion = true;
         
-        this.buscarProducto.palabraClave = this.id.toString();
+        // Usar el código tal cual viene (string o número)
+        this.buscarProducto.palabraClave = codigoBarras;
 
         this.buscarProductoPorCodigoDeBaras();
 
@@ -126,6 +129,12 @@ export class NuevoProductoComponent implements OnInit {
       }
     }
 
+    // Si no tiene código de barras, generar uno automático
+    if (!this.formulario.controls['codigoDeBarras'].value || this.formulario.controls['codigoDeBarras'].value.trim() === '') {
+      const codigoGenerado = 'SIN-CB-' + Date.now();
+      this.formulario.patchValue({codigoDeBarras: codigoGenerado});
+    }
+
     Swal.fire({
       title: 'Espere',
       text: 'Guardando producto',
@@ -135,10 +144,19 @@ export class NuevoProductoComponent implements OnInit {
     Swal.showLoading();
 
     let esRepetido = false;
+    const codigoDeBarras = this.formulario.controls['codigoDeBarras'].value;
 
-    await this.validarProductoRepetido(this.formulario.controls['codigoDeBarras'].value).then(resp => {
-      esRepetido = resp;
-    });
+    // Validar duplicados:
+    // - En modo creación: siempre validar excepto si es código generado
+    // - En modo modificación: validar solo si el código cambió y no es generado
+    const codigoCambio = this.esModificacion && codigoDeBarras !== this.codigoOriginal;
+    const debeValidar = (!this.esModificacion || codigoCambio) && !codigoDeBarras.startsWith('SIN-CB-');
+    
+    if (debeValidar) {
+      await this.validarProductoRepetido(codigoDeBarras).then(resp => {
+        esRepetido = resp;
+      });
+    }
 
     if(!this.esModificacion) {
       if(esRepetido) {
@@ -155,7 +173,10 @@ export class NuevoProductoComponent implements OnInit {
           
          }
       } else {
-        await this.productosService.crearProducto(this.formulario.value).then( docRef => {
+        // Crear objeto sin el campo 'id' para nuevos productos
+        const { id, ...productoData } = this.formulario.value;
+        
+        await this.productosService.crearProducto(productoData).then( docRef => {
           console.log(docRef)
           Swal.fire({
             title: this.formulario.controls['descripcion'].value,
@@ -176,15 +197,27 @@ export class NuevoProductoComponent implements OnInit {
     }
 
     if(this.esModificacion) {
-      let inputIdProducto = document.getElementById("idProducto");
-      await this.productosService.modificarProducto(this.formulario.value, inputIdProducto.innerHTML).then( () => {
+      if(esRepetido) {
         Swal.fire({
-          title: this.formulario.controls['descripcion'].value,
-          text: 'Se actualizó correctamente',
-          icon: 'success'
+          title: 'Código repetido',
+          text: 'Ya existe un producto registrado con este código de barras. Por favor verifique.',
+          icon: 'warning',
+          didClose: () => {
+            const codigoDeBarras= this.el.nativeElement.querySelector("#codigoDeBarras");
+            codigoDeBarras.focus();
+          }
         })
-      })
-      .catch(e => console.log('Error: ', e));
+      } else {
+        const productoId = this.formulario.controls['id'].value;
+        await this.productosService.modificarProducto(this.formulario.value, productoId).then( () => {
+          Swal.fire({
+            title: this.formulario.controls['descripcion'].value,
+            text: 'Se actualizó correctamente',
+            icon: 'success'
+          })
+        })
+        .catch(e => console.log('Error: ', e));
+      }
     }
   }
 
@@ -237,9 +270,8 @@ export class NuevoProductoComponent implements OnInit {
       this.formulario.patchValue({ganancia: 0});
       return;
     } 
-    // this.producto.precioMayoreo = this.producto.precioVenta = this.producto.precioCosto * (1 + ( event.target.value / 100)) < 0 ? 0 : parseFloat((Math.round((this.producto.precioCosto * (1 + ( event.target.value / 100))) * 10) / 10).toString());
 
-    const nuevoPrecio = this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100)) < 0 ? 0 : parseFloat((Math.round((this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100))) * 10) / 10).toString())
+    const nuevoPrecio = this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100)) < 0 ? 0 : Math.ceil(this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100)));
     
     this.formulario.patchValue({precioMayoreo: nuevoPrecio});
     this.formulario.patchValue({precioVenta: nuevoPrecio});
@@ -285,9 +317,8 @@ export class NuevoProductoComponent implements OnInit {
           icon: 'warning'
         })
       } else {
-        let inputIdProducto = document.getElementById("idProducto");
-        inputIdProducto.innerHTML = productos[0].id
         this.formulario.setValue({
+          id: productos[0].id,
           codigoDeBarras: productos[0].codigoDeBarras,
           descripcion: productos[0].descripcion,
           seVende: productos[0].seVende,
@@ -297,6 +328,8 @@ export class NuevoProductoComponent implements OnInit {
           precioMayoreo: productos[0].precioMayoreo,
           departamento: productos[0].departamento
         })
+        // Guardar el código original para validación de duplicados
+        this.codigoOriginal = productos[0].codigoDeBarras;
         Swal.close();
       }
     })

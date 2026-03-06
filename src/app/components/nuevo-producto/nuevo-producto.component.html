@@ -1,206 +1,192 @@
-<div class="p-3 animated fadeIn faster">
-    <h4 *ngIf="!esModificacion">Nuevo producto</h4> 
-    <h4 *ngIf="esModificacion">Modificar producto</h4> 
-    <br>
-  
-  <div class="row w-50">
-    <div class="col">
-      
-      <form *ngIf="esModificacion" (submit)="buscarProductoPorCodigoDeBaras()">
-        <div class="form-group">
-          <div class="form-group row">
-            <label class="col-form-label col-sm-2 text-right"></label>
-            <div class="col-sm-10">
-              <div class="input-group">
-                <input type="text" class="form-control" [(ngModel)] = "buscarProducto.palabraClave" name="codigoDeProducto" id="codigoDeProducto" #codigoDeProducto placeholder="Código del producto" aria-label="Código del producto" aria-describedby="button-addon2" autocomplete="off">
-                <div class="input-group-append">
-                  <button class="btn btn-success" (click)="buscarProductoPorCodigoDeBaras()" type="button" id="button-addon2"><i class="fa fa-search"></i> Buscar</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </form>
-
-      <form [formGroup] = "formulario" (ngSubmit) = "guardar()">  
-        
-        <div class="form-group row" *ngIf="esModificacion" hidden>
-          <label class="col-form-label col-sm-2 text-right">ID</label>
-          <div class="col-sm-10">
-            <span
-                    id="idProducto"></span> 
-          </div>
-        </div>
-
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Código de barras</label>
-          <div class="col-sm-10">
-            <input type="text"
-                    class="form-control"
-                    formControlName="codigoDeBarras"
-                    name="codigoDeBarras"
-                    id="codigoDeBarras"
-                    autocomplete="off"
-                    required>
-          </div>
-        </div>
-  
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Descripción</label>
-          <div class="col-sm-10">
-            <input type="text"
-                    class="form-control"
-                    formControlName="descripcion"
-                    name="descripcion"
-                    autocomplete="off"
-                    required>
-          </div>
-        </div>
-  
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Se vende</label>
-          <div class="col-sm-10">
-            <div class="row">
-              
-              <div class="col">
-                <button [ngClass]="formulario.controls['seVende'].value == 1 ? 'btn-primary' : 'btn-outline-primary'" class="btn w-100" type="button" (click)="setSeVende(1)">
-                  Por unidad / pieza
-                </button>
-              </div>
-      
-              <div class="col">
-                <button [ngClass]="formulario.controls['seVende'].value == 2 ? 'btn-primary' : 'btn-outline-primary'" class="btn w-100" type="button" (click)="setSeVende(2)">
-                  A granel
-                </button>
-              </div>
-      
-              <div class="col">
-                <button [ngClass]="formulario.controls['seVende'].value == 3 ? 'btn-primary' : 'btn-outline-primary'" class="btn w-100" type="button" (click)="setSeVende(3)">
-                  Como paquete (kit)
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Precio costo</label>
-          <label class="col-form-label col-sm-10">
-            <div class="input-group">
-              <div class="input-group-prepend">
-                <span class="input-group-text">$</span>
-              </div>
-              <input type="number"
-                      class="form-control"
-                      formControlName="precioCosto"
-                      name="precioCosto"
-                      (keyup) = "validarCosto($event)"
-                      required>
-            </div>
-          </label>
-        </div>
-        
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Ganancia</label>
-          <label class="col-form-label col-sm-10">
-            <div class="input-group">
-              <input type="number"
-                      class="form-control"
-                      formControlName="ganancia"
-                      name="ganancia"
-                      (keyup) = "calcularPrecioVenta($event)"
-                      required>
-              <div class="input-group-append">
-                <span class="input-group-text">%</span>
-              </div>
-            </div>
-          </label>
-          
-        </div>
-  
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Precio venta</label>
-          <label class="col-form-label col-sm-10">
-            <div class="input-group">
-              <div class="input-group-prepend">
-                <span class="input-group-text">$</span>
-              </div>
-              <input type="number"
-                      class="form-control"
-                      formControlName="precioVenta"
-                      name="precioVenta"
-                      (keyup) = "calcularGanancia($event)"
-                      required>
-            </div>
-          </label>
-        </div>
-  
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Precio mayoreo</label>
-          <label class="col-form-label col-sm-10">
-            <div class="input-group">
-              <div class="input-group-prepend">
-                <span class="input-group-text">$</span>
-              </div>
-              <input type="number"
-                      class="form-control"
-                      formControlName="precioMayoreo"
-                      name="precioMayoreo"
-                      required>
-            </div>
-          </label>
-          
-        </div>
-  
-        <div class="form-group row">
-          <label class="col-form-label col-sm-2 text-right">Departamento</label>
-          <label class="col-form-label col-sm-10">
-            <div class="input-group">
-              <select #departamentos id="departamentos" (change)="setDepartamento(departamentos.value)" class="form-control custom-select"
-              formControlName="departamento"
-              name="departamento" >
-                <option value="0" [selected]>- Sin departamento -</option>
-                <option *ngFor="let departamento of deptos; let i = index" [value]=departamento.id>{{ departamento.nombre }}</option>
-                <option value="-1">+ Agregar nuevo</option>
-                <!-- <option value="2">Bebidas</option>
-                <option value="3">Frutas y verduras</option> -->
-              </select>
-            </div>
-          </label>
-
-
-          <div class="col-sm-10 offset-sm-2">
-            <input type="text"
-                    class="form-control"
-                    autocomplete="off"
-                    placeholder="Nombre de nuevo departamento"
-                    id="nuevoDepartamento"
-                    hidden>
-          </div>
-
-
-          
-        </div>
-
-        <div *ngIf="formularioInvalido" class="bg-danger text-white p-2 mb-2 rounded text-center">
-          Para continuar, debe llenar todos los campos del formulario.
-        </div>
-  
-        <hr>
-  
-        <div class="form-group text-center">
-          <button type="submit"
-                  class="btn btn-primary w-25">
-                  <span *ngIf="!esModificacion">
-                    <i class="fa fa-save"></i> Guardar producto
-                  </span>
-                  <span *ngIf="esModificacion">
-                    <i class="fa fa-save"></i> Actualizar
-                  </span>
-          </button>
-        </div>
-  
-      </form>
+<div class="nuevo-producto-container animated fadeIn faster">
+  <!-- Header -->
+  <div class="header-nuevo-producto">
+    <div class="titulo-seccion">
+      <i class="fa" [ngClass]="!esModificacion ? 'fa-plus-circle' : 'fa-edit'"></i>
+      <h3 *ngIf="!esModificacion">Nuevo producto</h3>
+      <h3 *ngIf="esModificacion">Modificar producto</h3>
     </div>
   </div>
+
+  <div class="contenido-formulario">
+    
+    <!-- Búsqueda de producto (solo en modo modificación) -->
+    <form *ngIf="esModificacion" (submit)="buscarProductoPorCodigoDeBaras()" class="seccion-busqueda">
+      <div class="grupo-busqueda">
+        <div class="input-wrapper">
+          <i class="fa fa-barcode icono-input"></i>
+          <input type="text" 
+                 class="input-buscar-producto" 
+                 [(ngModel)] = "buscarProducto.palabraClave" 
+                 name="codigoDeProducto" 
+                 id="codigoDeProducto" 
+                 #codigoDeProducto 
+                 placeholder="Código del producto" 
+                 autocomplete="off">
+        </div>
+        <button class="btn-buscar-producto" (click)="buscarProductoPorCodigoDeBaras()" type="button">
+          <i class="fa fa-search"></i> Buscar
+        </button>
+      </div>
+    </form>
+
+    <!-- Formulario principal -->
+    <form [formGroup] = "formulario" (ngSubmit) = "guardar()" class="formulario-producto">
+      
+      <!-- Campo Código de Barras -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Código de barras <span class="texto-opcional">(opcional)</span></label>
+        <div class="input-wrapper">
+          <i class="fa fa-barcode icono-input"></i>
+          <input type="text"
+                 class="input-campo"
+                 formControlName="codigoDeBarras"
+                 name="codigoDeBarras"
+                 id="codigoDeBarras"
+                 autocomplete="off"
+                 placeholder="Dejar vacío para generar automáticamente">
+        </div>
+      </div>
+
+      <!-- Campo Descripción -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Descripción</label>
+        <div class="input-wrapper">
+          <i class="fa fa-tag icono-input"></i>
+          <input type="text"
+                 class="input-campo"
+                 formControlName="descripcion"
+                 name="descripcion"
+                 autocomplete="off"
+                 required>
+        </div>
+      </div>
+
+      <!-- Campo Se Vende -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Se vende</label>
+        <div class="botones-tipo-venta">
+          <button [ngClass]="{'btn-tipo-activo': formulario.controls['seVende'].value == 1, 'btn-tipo': formulario.controls['seVende'].value != 1}" 
+                  type="button" 
+                  (click)="setSeVende(1)">
+            <i class="fa fa-cube"></i>
+            <span>Por unidad / pieza</span>
+          </button>
+          
+          <button [ngClass]="{'btn-tipo-activo': formulario.controls['seVende'].value == 2, 'btn-tipo': formulario.controls['seVende'].value != 2}" 
+                  type="button" 
+                  (click)="setSeVende(2)">
+            <i class="fa fa-balance-scale"></i>
+            <span>A granel</span>
+          </button>
+          
+          <button [ngClass]="{'btn-tipo-activo': formulario.controls['seVende'].value == 3, 'btn-tipo': formulario.controls['seVende'].value != 3}" 
+                  type="button" 
+                  (click)="setSeVende(3)">
+            <i class="fa fa-cubes"></i>
+            <span>Como paquete (kit)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Campo Precio Costo -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Precio costo</label>
+        <div class="input-wrapper-moneda">
+          <span class="simbolo-moneda">$</span>
+          <input type="number"
+                 class="input-campo-moneda"
+                 formControlName="precioCosto"
+                 name="precioCosto"
+                 (keyup) = "validarCosto($event)"
+                 required>
+        </div>
+      </div>
+
+      <!-- Campo Ganancia -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Ganancia</label>
+        <div class="input-wrapper-porcentaje">
+          <input type="number"
+                 class="input-campo-porcentaje"
+                 formControlName="ganancia"
+                 name="ganancia"
+                 (keyup) = "calcularPrecioVenta($event)"
+                 required>
+          <span class="simbolo-porcentaje">%</span>
+        </div>
+      </div>
+
+      <!-- Campo Precio Venta -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Precio venta</label>
+        <div class="input-wrapper-moneda">
+          <span class="simbolo-moneda">$</span>
+          <input type="number"
+                 class="input-campo-moneda"
+                 formControlName="precioVenta"
+                 name="precioVenta"
+                 (keyup) = "calcularGanancia($event)"
+                 required>
+        </div>
+      </div>
+
+      <!-- Campo Precio Mayoreo -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Precio mayoreo</label>
+        <div class="input-wrapper-moneda">
+          <span class="simbolo-moneda">$</span>
+          <input type="number"
+                 class="input-campo-moneda"
+                 formControlName="precioMayoreo"
+                 name="precioMayoreo"
+                 required>
+        </div>
+      </div>
+
+      <!-- Campo Departamento -->
+      <div class="campo-formulario">
+        <label class="etiqueta-campo">Departamento</label>
+        <div class="input-wrapper">
+          <i class="fa fa-folder icono-input"></i>
+          <select #departamentos 
+                  id="departamentos" 
+                  (change)="setDepartamento(departamentos.value)" 
+                  class="select-campo"
+                  formControlName="departamento"
+                  name="departamento">
+            <option value="0" [selected]>- Sin departamento -</option>
+            <option *ngFor="let departamento of deptos; let i = index" [value]=departamento.id>{{ departamento.nombre }}</option>
+            <option value="-1">+ Agregar nuevo</option>
+          </select>
+        </div>
+
+        <input type="text"
+               class="input-campo mt-3"
+               autocomplete="off"
+               placeholder="Nombre de nuevo departamento"
+               id="nuevoDepartamento"
+               hidden>
+      </div>
+
+      <!-- Mensaje de error -->
+      <div *ngIf="formularioInvalido" class="mensaje-error">
+        <i class="fa fa-exclamation-circle"></i>
+        Para continuar, debe llenar todos los campos del formulario.
+      </div>
+
+      <!-- Botón de guardar -->
+      <div class="grupo-botones">
+        <button type="submit" class="btn-guardar-producto">
+          <span *ngIf="!esModificacion">
+            <i class="fa fa-save"></i> Guardar producto
+          </span>
+          <span *ngIf="esModificacion">
+            <i class="fa fa-save"></i> Actualizar
+          </span>
+        </button>
+      </div>
+
+    </form>
   </div>
+</div>
