@@ -8,6 +8,7 @@ import { BuscarProductoModel } from 'src/app/models/buscarProducto.model';
 import { ProductoModel } from 'src/app/models/producto.model';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { ProductosService } from 'src/app/services/productos.service';
+import { ConfiguracionService } from 'src/app/services/configuracion.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -29,12 +30,14 @@ export class NuevoProductoComponent implements OnInit {
   nombreNuevoDepartamento: string;
   formularioInvalido = false;
   codigoOriginal: string = ''; // Para guardar el código original al modificar
+  calculoAutomaticoHabilitado: boolean = false; // Para controlar el comportamiento de ganancia
 
   constructor( private productosService: ProductosService, 
                private el: ElementRef,
                private route: ActivatedRoute,
                private router: Router,
-               private departamentosService: DepartamentosService) {
+               private departamentosService: DepartamentosService,
+               private configuracionService: ConfiguracionService) {
     this.formulario = new FormGroup({
       id: new FormControl(),
       codigoDeBarras: new FormControl(),
@@ -61,11 +64,16 @@ export class NuevoProductoComponent implements OnInit {
         this.buscarProducto.palabraClave = codigoBarras;
 
         this.buscarProductoPorCodigoDeBaras();
+        
+        // También cargar configuración para mantener comportamiento consistente
+        this.cargarEstadoConfiguracion();
 
         setTimeout(() => {
           this.botonSeleccionado.emit(2)
         }, 100);
       } else {
+        // Si es un nuevo producto, cargar ganancia por defecto de configuración
+        this.cargarGananciaPorDefecto();
         // setTimeout(() => {
         //   this.botonSeleccionado.emit(1)
         // }, 100);
@@ -258,8 +266,22 @@ export class NuevoProductoComponent implements OnInit {
     if(event.target.value== '') {
       this.formulario.patchValue({precioMayoreo: 0});
       this.formulario.patchValue({precioVenta: 0});
-      this.formulario.patchValue({ganancia: 0});
+      
+      // Solo resetear ganancia si NO está habilitado el cálculo automático
+      if (!this.calculoAutomaticoHabilitado) {
+        this.formulario.patchValue({ganancia: 0});
+      }
       return;
+    }
+
+    // Si hay un porcentaje de ganancia, calcular automáticamente los precios
+    const ganancia = this.formulario.controls['ganancia'].value;
+    if (ganancia && ganancia > 0) {
+      const precioCosto = parseFloat(event.target.value);
+      const nuevoPrecio = Math.ceil(precioCosto * (1 + (ganancia / 100)));
+      
+      this.formulario.patchValue({precioMayoreo: nuevoPrecio});
+      this.formulario.patchValue({precioVenta: nuevoPrecio});
     }
   }
 
@@ -267,7 +289,7 @@ export class NuevoProductoComponent implements OnInit {
     if (!this.formulario.controls['precioCosto'].value) {
       this.formulario.patchValue({precioMayoreo: 0});
       this.formulario.patchValue({precioVenta: 0});
-      this.formulario.patchValue({ganancia: 0});
+      // No resetear ganancia aquí, se está escribiendo en el campo de ganancia
       return;
     } 
 
@@ -281,7 +303,11 @@ export class NuevoProductoComponent implements OnInit {
     if (!this.formulario.controls['precioCosto'].value) {
       this.formulario.patchValue({precioMayoreo: 0});
       this.formulario.patchValue({precioVenta: 0});
-      this.formulario.patchValue({ganancia: 0});
+      
+      // Solo resetear ganancia si NO está habilitado el cálculo automático
+      if (!this.calculoAutomaticoHabilitado) {
+        this.formulario.patchValue({ganancia: 0});
+      }
       return;
     } 
 
@@ -351,5 +377,38 @@ export class NuevoProductoComponent implements OnInit {
     })
   }
 
+  async cargarGananciaPorDefecto(): Promise<void> {
+    try {
+      // Cargar configuración desde Firestore
+      const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+      
+      if (config) {
+        // Guardar el estado de cálculo automático
+        this.calculoAutomaticoHabilitado = config.calcularPrecioAutomatico || false;
+        
+        // Si está activado el cálculo automático, pre-llenar el campo ganancia
+        if (config.calcularPrecioAutomatico && config.margenGanancia) {
+          this.formulario.patchValue({ ganancia: config.margenGanancia });
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar configuración de ganancia:', error);
+      // No mostrar error al usuario, simplemente no pre-llenar el campo
+    }
+  }
+
+  async cargarEstadoConfiguracion(): Promise<void> {
+    try {
+      // Cargar solo el estado de configuración sin modificar el formulario
+      const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+      
+      if (config) {
+        // Guardar el estado de cálculo automático
+        this.calculoAutomaticoHabilitado = config.calcularPrecioAutomatico || false;
+      }
+    } catch (error) {
+      console.error('Error al cargar estado de configuración:', error);
+    }
+  }
 
 }

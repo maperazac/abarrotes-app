@@ -1,0 +1,306 @@
+<div class="clientes-container">
+  <!-- Header con pestañas -->
+  <div class="header-clientes">
+    <div class="pestanas-container">
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'estado-cuenta'"
+        (click)="cambiarVista('estado-cuenta')">
+        <i class="fa fa-file-text-o" aria-hidden="true"></i>
+        <span>Estado de Cuenta</span>
+      </button>
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'nuevo'"
+        (click)="cambiarVista('nuevo')">
+        <i class="fa fa-user-plus" aria-hidden="true"></i>
+        <span>Nuevo Cliente</span>
+      </button>
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'modificar'"
+        (click)="cambiarVista('modificar')">
+        <i class="fa fa-edit" aria-hidden="true"></i>
+        <span>Modificar Cliente</span>
+      </button>
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'eliminar'"
+        (click)="cambiarVista('eliminar')">
+        <i class="fa fa-user-times" aria-hidden="true"></i>
+        <span>Eliminar Cliente</span>
+      </button>
+      <button class="pestana">
+        <i class="fa fa-file-pdf-o" aria-hidden="true"></i>
+        <span>Reporte de Saldos</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="contenido-clientes">
+    
+    <!-- Vista: Estado de Cuenta -->
+    <div *ngIf="vistaActual === 'estado-cuenta'" class="vista-estado-cuenta">
+      
+      <!-- Información del cliente -->
+      <div *ngIf="clienteSeleccionado" class="info-cliente-header">
+        <div class="titulo-estado">ESTADO DE CUENTA</div>
+        <div class="nombre-cliente">{{ clienteSeleccionado.nombre }}</div>
+        
+        <div class="saldos-info">
+          <div class="saldo-item">
+            <span class="label-saldo">Saldo Actual:</span>
+            <span class="valor-saldo">${{ clienteSeleccionado.saldoActual.toFixed(2) }}</span>
+          </div>
+          <div class="saldo-item">
+            <span class="label-saldo">Límite de Crédito:</span>
+            <span class="valor-saldo limite">{{ getLimiteCreditoTexto() }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de acciones -->
+      <div *ngIf="clienteSeleccionado" class="barra-acciones-estado">
+        <div class="botones-izquierda">
+          <button class="btn-accion" disabled>
+            <i class="fa fa-print" aria-hidden="true"></i>
+            Imprimir Estado
+          </button>
+          <button class="btn-accion" disabled>
+            <i class="fa fa-file-text" aria-hidden="true"></i>
+            Imprimir Edo. Cuenta completo
+          </button>
+          <button class="btn-accion btn-abonar" disabled>
+            <i class="fa fa-money" aria-hidden="true"></i>
+            Abonar
+          </button>
+          <button class="btn-accion btn-liquidar" disabled>
+            <i class="fa fa-check-circle" aria-hidden="true"></i>
+            Liquidar Adeudo
+          </button>
+          <button class="btn-accion" disabled>
+            <i class="fa fa-list-alt" aria-hidden="true"></i>
+            Detalle de Abonos
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de ventas -->
+      <div *ngIf="clienteSeleccionado" class="contenedor-tabla-estado">
+        <div *ngIf="cargandoVentas" class="loading-estado">
+          <i class="fa fa-spinner fa-spin fa-3x" aria-hidden="true"></i>
+          <p>Cargando ventas...</p>
+        </div>
+
+        <table *ngIf="!cargandoVentas" class="tabla-estado">
+          <thead>
+            <tr>
+              <th style="width: 15%">Junio</th>
+              <th style="width: 35%">Descripción del Producto</th>
+              <th style="width: 15%">Precio Venta</th>
+              <th style="width: 15%">Cantidad</th>
+              <th style="width: 20%">Importe</th>
+            </tr>
+          </thead>
+          <tbody *ngIf="ventasCreditoFiltradas.length > 0; else sinVentas">
+            <ng-container *ngFor="let venta of ventasCreditoFiltradas">
+              <!-- Fila de fecha -->
+              <tr class="fila-fecha" (click)="seleccionarVentaEstado(venta)">
+                <td colspan="5">
+                  {{ formatearFecha(venta.fechaVenta) }} - #{{ venta.idVenta }}
+                </td>
+              </tr>
+              <!-- Filas de productos -->
+              <tr 
+                *ngFor="let producto of venta.productos" 
+                class="fila-producto"
+                [class.seleccionada]="ventaSeleccionadaEstado?.id === venta.id">
+                <td></td>
+                <td>{{ producto.descripcion }}</td>
+                <td class="col-precio">${{ producto.precioVenta.toFixed(2) }}</td>
+                <td class="col-cantidad">{{ producto.cantidad }}</td>
+                <td class="col-importe">${{ producto.importe.toFixed(2) }}</td>
+              </tr>
+            </ng-container>
+          </tbody>
+          <ng-template #sinVentas>
+            <tbody>
+              <tr>
+                <td colspan="5" class="sin-resultados">
+                  <div class="mensaje-sin-resultados">
+                    <i class="fa fa-inbox fa-3x" aria-hidden="true"></i>
+                    <p>No hay ventas a crédito para mostrar</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </ng-template>
+        </table>
+      </div>
+
+      <!-- Footer con totales y acciones -->
+      <div *ngIf="clienteSeleccionado" class="footer-estado">
+        <div class="filtros-footer">
+          <label>Mostrar ventas:</label>
+          <select (change)="cambiarFiltroLiquidadas($event)">
+            <option value="no-liquidadas" selected>no liquidadas</option>
+            <option value="todas">todas</option>
+          </select>
+        </div>
+
+        <div class="totales-footer">
+          <div class="impuestos-row">
+            <span>Impuestos:</span>
+            <span>${{ calcularImpuestos().toFixed(2) }}</span>
+          </div>
+          <div class="total-row">
+            <span>Total:</span>
+            <span>${{ calcularTotalGeneral().toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <div class="botones-footer">
+          <button class="btn-footer btn-eliminar" [disabled]="!ventaSeleccionadaEstado">
+            <i class="fa fa-trash" aria-hidden="true"></i>
+            Eliminar
+          </button>
+          <button class="btn-footer btn-imprimir" disabled>
+            <i class="fa fa-print" aria-hidden="true"></i>
+            Imprimir
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Vista: Nuevo Cliente -->
+    <div *ngIf="vistaActual === 'nuevo'" class="vista-nuevo-cliente">
+      <div class="formulario-cliente-card">
+        <h2 class="titulo-nuevo">NUEVO CLIENTE</h2>
+        <p class="instruccion">- Llene la siguiente información acerca del Nuevo Cliente:</p>
+        
+        <div class="formulario-nuevo-cliente">
+          <div class="campo-form">
+            <label for="nombreCliente">Nombre Completo:</label>
+            <input 
+              type="text" 
+              id="nombreCliente"
+              class="input-campo"
+              [(ngModel)]="nuevoCliente.nombre"
+              placeholder="Ingrese el nombre completo">
+          </div>
+
+          <div class="campo-form">
+            <label for="direccionCliente">Dirección:</label>
+            <input 
+              type="text" 
+              id="direccionCliente"
+              class="input-campo input-largo"
+              [(ngModel)]="nuevoCliente.direccion"
+              maxlength="255"
+              placeholder="Ingrese la dirección">
+            <span class="texto-ayuda">(El límite de caracteres es de 255)</span>
+          </div>
+
+          <div class="campo-form">
+            <label for="telefonoCliente">Teléfono(s):</label>
+            <input 
+              type="text" 
+              id="telefonoCliente"
+              class="input-campo"
+              [(ngModel)]="nuevoCliente.telefono"
+              placeholder="Ingrese el teléfono">
+          </div>
+
+          <div class="campo-form">
+            <label for="limiteCreditoCliente">Límite de Crédito:</label>
+            <input 
+              type="number" 
+              id="limiteCreditoCliente"
+              class="input-campo input-numero"
+              [(ngModel)]="nuevoCliente.limiteCredito"
+              min="0"
+              step="0.01"
+              placeholder="0.00">
+            <span class="texto-ayuda">(Si es cero, no tiene límite de crédito)</span>
+          </div>
+
+          <div class="botones-formulario">
+            <button 
+              class="btn-form btn-guardar" 
+              (click)="guardarNuevoCliente()"
+              [disabled]="guardandoCliente">
+              <i class="fa fa-check" aria-hidden="true"></i>
+              {{ guardandoCliente ? 'Guardando...' : 'Guardar Cliente' }}
+            </button>
+            <button 
+              class="btn-form btn-cancelar" 
+              (click)="cancelarNuevoCliente()"
+              [disabled]="guardandoCliente">
+              <i class="fa fa-times" aria-hidden="true"></i>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vistas placeholder para otras pestañas -->
+    <div *ngIf="vistaActual !== 'estado-cuenta' && vistaActual !== 'nuevo'" class="vista-placeholder">
+      <div class="placeholder-card">
+        <i class="fa fa-users fa-5x" aria-hidden="true"></i>
+        <h2>{{ vistaActual === 'modificar' ? 'Modificar Cliente' : vistaActual === 'eliminar' ? 'Eliminar Cliente' : 'Reporte de Saldos' }}</h2>
+        <p>Esta funcionalidad estará disponible próximamente</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal de búsqueda de cliente -->
+<div class="modal-busqueda" *ngIf="mostrarModalBusqueda" (click)="cerrarModalBusqueda()">
+  <div class="modal-contenido" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Estado de Cuenta</h2>
+    </div>
+    
+    <div class="modal-body">
+      <label>Teclee el Número o Nombre del cliente:</label>
+      <input 
+        type="text" 
+        class="input-busqueda-cliente"
+        [(ngModel)]="textoBusquedaCliente"
+        (keydown.enter)="buscarClientes()"
+        placeholder="Buscar cliente..."
+        autofocus>
+
+      <!-- Lista de clientes encontrados -->
+      <div class="lista-clientes" *ngIf="clientesEncontrados.length > 0">
+        <div 
+          *ngFor="let cliente of clientesEncontrados" 
+          class="item-cliente"
+          [class.seleccionado]="clienteSeleccionado?.id === cliente.id"
+          (click)="seleccionarClienteBusqueda(cliente)">
+          <div class="nombre-item">{{ cliente.nombre }}</div>
+          <div class="info-item">
+            <span *ngIf="cliente.numero">N°: {{ cliente.numero }}</span>
+            <span class="saldo-item">Saldo: ${{ cliente.saldoActual.toFixed(2) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mensaje-busqueda" *ngIf="buscandoClientes">
+        <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+        <span>Buscando...</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal btn-aceptar" (click)="aceptarSeleccionCliente()">
+        <i class="fa fa-check" aria-hidden="true"></i>
+        Aceptar
+      </button>
+    </div>
+  </div>
+</div>

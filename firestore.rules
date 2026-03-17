@@ -33,6 +33,16 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     
+    // Reglas para la colección de configuración
+    match /configuracion/{configId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de movimientos de inventario
+    match /movimientosInventario/{movimientoId} {
+      allow read, write: if request.auth != null;
+    }
+    
     // Regla para denegar todo lo demás
     match /{document=**} {
       allow read, write: if false;

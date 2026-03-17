@@ -25,7 +25,11 @@
       </a>
     </li>
     <li class="menu-item">
-      <a tabindex="-1" class="menu-link disabled" routerLinkActive="active" routerLink="/clientes">
+      <a tabindex="-1" 
+         class="menu-link" 
+         [class.disabled]="!creditoClientesHabilitado"
+         routerLinkActive="active" 
+         routerLink="/clientes">
         <i class="fa fa-users menu-icon" aria-hidden="true"></i>
         <span class="menu-text">Clientes</span>
       </a>
@@ -37,7 +41,11 @@
       </a>
     </li>
     <li class="menu-item">
-      <a tabindex="-1" class="menu-link disabled" routerLinkActive="active" routerLink="/inventario">
+      <a tabindex="-1" 
+         class="menu-link" 
+         [class.disabled]="!inventarioHabilitado"
+         routerLinkActive="active" 
+         routerLink="/inventario">
         <i class="fa fa-archive menu-icon" aria-hidden="true"></i>
         <span class="menu-text">Inventario</span>
       </a>

@@ -30,6 +30,8 @@ import { SalidaDineroComponent } from './modals/salida-dinero/salida-dinero.comp
 import { BarraEstadoComponent } from './components/barra-estado/barra-estado.component';
 import { VentasDelDiaComponent } from './components/ventas-del-dia/ventas-del-dia.component';
 import { CorteCajaComponent } from './pages/corte-caja/corte-caja.component';
+import { InventarioComponent } from './pages/inventario/inventario.component';
+import { ClientesComponent } from './pages/clientes/clientes.component';
 
 @NgModule({
   declarations: [
@@ -55,6 +57,8 @@ import { CorteCajaComponent } from './pages/corte-caja/corte-caja.component';
     BarraEstadoComponent,
     VentasDelDiaComponent,
     CorteCajaComponent,
+    InventarioComponent,
+    ClientesComponent,
   ],
   imports: [
     BrowserModule,

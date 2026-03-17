@@ -2,8 +2,13 @@ import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Timestamp } from '@angular/fire/firestore';
 import VentaInterface from 'src/app/interfaces/ventas.interface';
 import SalidaDineroInterface from 'src/app/interfaces/salida-dinero.interface';
+import MovimientoInventarioInterface from 'src/app/interfaces/movimiento-inventario.interface';
 import { VentasdbService } from 'src/app/services/ventasdb.service';
 import { SalidasDineroService } from 'src/app/services/salidas-dinero.service';
+import { ConfiguracionService } from 'src/app/services/configuracion.service';
+import { ProductosService } from 'src/app/services/productos.service';
+import { MovimientosInventarioService } from 'src/app/services/movimientos-inventario.service';
+import { DepartamentosService } from 'src/app/services/departamentos.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -30,7 +35,11 @@ export class VentasDelDiaComponent implements OnInit {
 
   constructor(
     private ventasService: VentasdbService,
-    private salidasService: SalidasDineroService
+    private salidasService: SalidasDineroService,
+    private configuracionService: ConfiguracionService,
+    private productosService: ProductosService,
+    private movimientosService: MovimientosInventarioService,
+    private departamentosService: DepartamentosService
   ) { }
 
   ngOnInit(): void {
@@ -446,6 +455,9 @@ export class VentasDelDiaComponent implements OnInit {
 
     await this.salidasService.registrarSalida(salida);
 
+    // Devolver inventario si está habilitado
+    await this.devolverInventarioParcial(articulo.id, cantidadADevolver);
+
     // Resetear la selección de artículo
     this.articuloSeleccionado = -1;
   }
@@ -486,6 +498,9 @@ export class VentasDelDiaComponent implements OnInit {
         try {
           await this.ventasService.cancelarVenta(this.ventaSeleccionada!.id!);
           
+          // Devolver inventario si está habilitado
+          await this.devolverInventarioCompleto();
+          
           Swal.fire({
             icon: 'success',
             title: 'Venta cancelada',
@@ -525,5 +540,130 @@ export class VentasDelDiaComponent implements OnInit {
         container: 'swal-high-zindex'
       }
     });
+  }
+
+  /**
+   * Devuelve todo el inventario de una venta cancelada
+   */
+  async devolverInventarioCompleto() {
+    try {
+      // Obtener configuración
+      const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+      
+      // Solo devolver inventario si la opción está activa
+      if (!config || !config.usarInventarios) {
+        return;
+      }
+
+      if (!this.ventaSeleccionada || !this.ventaSeleccionada.detalleProductos) {
+        return;
+      }
+
+      // Recorrer todos los productos de la venta cancelada
+      for (const producto of this.ventaSeleccionada.detalleProductos) {
+        try {
+          const productoDoc = await this.productosService.obtenerProductoPorId(producto.id);
+          
+          if (productoDoc) {
+            const inventarioActual = productoDoc.inventario || 0;
+            const cantidadDevuelta = parseFloat(producto.cantidad);
+            const nuevoInventario = inventarioActual + cantidadDevuelta;
+
+            // Actualizar inventario en Firestore
+            await this.productosService.actualizarInventario(producto.id, nuevoInventario);
+
+            // Obtener el nombre del departamento
+            let nombreDepartamento = 'Sin Departamento';
+            if (productoDoc.departamento && productoDoc.departamento !== '0') {
+              const deptoDoc = await this.departamentosService.obtenerDepartamentosPorId(productoDoc.departamento);
+              if (deptoDoc.exists()) {
+                const deptoData: any = deptoDoc.data();
+                nombreDepartamento = deptoData.nombre || 'Sin Departamento';
+              }
+            }
+
+            // Registrar movimiento de inventario
+            const movimiento: MovimientoInventarioInterface = {
+              fecha: Timestamp.fromDate(new Date()),
+              idProducto: producto.id,
+              descripcionProducto: producto.descripcion,
+              cantidadAnterior: inventarioActual,
+              cantidadMovimiento: cantidadDevuelta,
+              cantidadNueva: nuevoInventario,
+              tipo: 'DEVOLUCION',
+              idCajero: localStorage.getItem('userId') || '0',
+              nombreCajero: localStorage.getItem('nombreUsuario') || 'Desconocido',
+              departamento: productoDoc.departamento || '0',
+              nombreDepartamento: nombreDepartamento,
+              observaciones: `Cancelación de venta - Folio: ${this.ventaSeleccionada.idTemp}`
+            };
+
+            await this.movimientosService.registrarMovimiento(movimiento);
+          }
+        } catch (error) {
+          console.error(`Error al devolver inventario del producto ${producto.id}:`, error);
+          // Continuar con los demás productos aunque uno falle
+        }
+      }
+    } catch (error) {
+      console.error('Error al devolver inventario completo:', error);
+      // No interrumpir el proceso de cancelación por errores de inventario
+    }
+  }
+
+  /**
+   * Devuelve inventario de una devolución parcial
+   */
+  async devolverInventarioParcial(idProducto: string, cantidadDevuelta: number) {
+    try {
+      // Obtener configuración
+      const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+      
+      // Solo devolver inventario si la opción está activa
+      if (!config || !config.usarInventarios) {
+        return;
+      }
+
+      const productoDoc = await this.productosService.obtenerProductoPorId(idProducto);
+      
+      if (productoDoc) {
+        const inventarioActual = productoDoc.inventario || 0;
+        const nuevoInventario = inventarioActual + cantidadDevuelta;
+
+        // Actualizar inventario en Firestore
+        await this.productosService.actualizarInventario(idProducto, nuevoInventario);
+
+        // Obtener el nombre del departamento
+        let nombreDepartamento = 'Sin Departamento';
+        if (productoDoc.departamento && productoDoc.departamento !== '0') {
+          const deptoDoc = await this.departamentosService.obtenerDepartamentosPorId(productoDoc.departamento);
+          if (deptoDoc.exists()) {
+            const deptoData: any = deptoDoc.data();
+            nombreDepartamento = deptoData.nombre || 'Sin Departamento';
+          }
+        }
+
+        // Registrar movimiento de inventario
+        const movimiento: MovimientoInventarioInterface = {
+          fecha: Timestamp.fromDate(new Date()),
+          idProducto: idProducto,
+          descripcionProducto: productoDoc.descripcion || 'Producto',
+          cantidadAnterior: inventarioActual,
+          cantidadMovimiento: cantidadDevuelta,
+          cantidadNueva: nuevoInventario,
+          tipo: 'DEVOLUCION',
+          idCajero: localStorage.getItem('userId') || '0',
+          nombreCajero: localStorage.getItem('nombreUsuario') || 'Desconocido',
+          departamento: productoDoc.departamento || '0',
+          nombreDepartamento: nombreDepartamento,
+          observaciones: `Devolución parcial - Folio: ${this.ventaSeleccionada?.idTemp || 'N/A'}`
+        };
+
+        await this.movimientosService.registrarMovimiento(movimiento);
+      }
+    } catch (error) {
+      console.error(`Error al devolver inventario del producto ${idProducto}:`, error);
+      // No interrumpir el proceso de devolución por errores de inventario
+    }
   }
 }

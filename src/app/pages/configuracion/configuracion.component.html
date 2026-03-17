@@ -1,3 +1,211 @@
-<div class="p-3">
-    <h3>Configuración</h3>
+<div class="configuracion-container">
+  <!-- Vista Principal: Grid de Módulos -->
+  <div *ngIf="vistaActual === 'principal'">
+    <!-- Header -->
+    <div class="header-configuracion">
+      <div class="header-contenido">
+        <div class="icono-header">
+          <i class="fa fa-cogs" aria-hidden="true"></i>
+        </div>
+        <div class="texto-header">
+          <h1>Configuración</h1>
+          <p class="subtitle">Personaliza y configura el sistema según tus necesidades</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid de Módulos -->
+    <div class="modulos-grid">
+      <div 
+        *ngFor="let modulo of modulos" 
+        class="modulo-card"
+        [class.expandido]="moduloSeleccionado?.id === modulo.id"
+        [style.border-color]="modulo.color">
+        
+        <!-- Cabecera del módulo -->
+        <div class="modulo-header" (click)="seleccionarModulo(modulo)">
+          <div class="modulo-icono" [style.background-color]="modulo.color">
+            <i class="fa" [ngClass]="modulo.icono" aria-hidden="true"></i>
+          </div>
+          <div class="modulo-info">
+            <h3 class="modulo-titulo">{{ modulo.titulo }}</h3>
+            <p class="modulo-descripcion">{{ modulo.descripcion }}</p>
+          </div>
+          <div class="modulo-toggle">
+            <i 
+              class="fa" 
+              [ngClass]="moduloSeleccionado?.id === modulo.id ? 'fa-chevron-up' : 'fa-chevron-down'" 
+              aria-hidden="true"></i>
+          </div>
+        </div>
+
+        <!-- Submódulos (expandibles) -->
+        <div class="submodulos-container" *ngIf="moduloSeleccionado?.id === modulo.id">
+          <div class="submodulos-grid">
+            <button 
+              *ngFor="let submodulo of modulo.submodulos"
+              class="submodulo-item"
+              (click)="navegarSubmodulo(submodulo)">
+              <div class="submodulo-icono">
+                <i class="fa" [ngClass]="submodulo.icono" aria-hidden="true"></i>
+              </div>
+              <div class="submodulo-contenido">
+                <h4 class="submodulo-titulo">{{ submodulo.titulo }}</h4>
+                <p class="submodulo-descripcion">{{ submodulo.descripcion }}</p>
+              </div>
+              <div class="submodulo-arrow">
+                <i class="fa fa-arrow-right" aria-hidden="true"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer informativo -->
+    <div class="footer-configuracion">
+      <div class="info-sistema">
+        <div class="info-item">
+          <i class="fa fa-info-circle" aria-hidden="true"></i>
+          <span>Versión 1.0.0</span>
+        </div>
+        <div class="info-item">
+          <i class="fa fa-shield" aria-hidden="true"></i>
+          <span>Sistema seguro</span>
+        </div>
+        <div class="info-item">
+          <i class="fa fa-clock-o" aria-hidden="true"></i>
+          <span>Última actualización: {{ 'now' | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista: Opciones Habilitadas -->
+  <div *ngIf="vistaActual === 'opciones-habilitadas'" class="vista-detalle">
+    <!-- Header de la vista detalle -->
+    <div class="header-detalle">
+      <button class="btn-volver" (click)="volverAPrincipal()">
+        <i class="fa fa-arrow-left" aria-hidden="true"></i>
+        Volver
+      </button>
+      <div class="titulo-detalle">
+        <h2>Opciones Habilitadas</h2>
+        <p>Configura las funcionalidades activas del sistema</p>
+      </div>
+    </div>
+
+    <!-- Formulario de opciones -->
+    <div class="contenido-detalle">
+      <div class="opciones-form">
+        
+        <!-- Opción 1: Usar inventarios -->
+        <div class="opcion-item">
+          <div class="opcion-checkbox">
+            <input 
+              type="checkbox" 
+              id="usarInventarios" 
+              [(ngModel)]="opcionesHabilitadas.usarInventarios">
+            <label for="usarInventarios" class="opcion-titulo">
+              Utilizar inventarios para mis productos
+            </label>
+          </div>
+          <div class="opcion-descripcion">
+            <p>Si usas Inventario, tus productos tendrán cantidades limitadas en venta y podrás llevar un control de cuanto tienes, cuándo y cuánto se vende.</p>
+            <p class="nota">Si actualmente no usas inventario, puedes no usarlo y posteriormente activarlo.</p>
+          </div>
+        </div>
+
+        <!-- Opción 2: Crédito a clientes -->
+        <div class="opcion-item">
+          <div class="opcion-checkbox">
+            <input 
+              type="checkbox" 
+              id="creditoClientes" 
+              [(ngModel)]="opcionesHabilitadas.creditoClientes">
+            <label for="creditoClientes" class="opcion-titulo">
+              Deseo ofrecer crédito a mis clientes
+            </label>
+          </div>
+          <div class="opcion-descripcion">
+            <p>Activa esta opción para dar de alta clientes y poder ofrecer ventas a crédito, recibir abonos y liquidar adeudos.</p>
+          </div>
+        </div>
+
+        <!-- Opción 3: Producto común -->
+        <div class="opcion-item">
+          <div class="opcion-checkbox">
+            <input 
+              type="checkbox" 
+              id="productoComun" 
+              [(ngModel)]="opcionesHabilitadas.productoComun">
+            <label for="productoComun" class="opcion-titulo">
+              Habilitar venta de Producto Común
+            </label>
+          </div>
+          <div class="opcion-descripcion">
+            <p>Deseas activar la opción de venta de "Producto Común", con la cual puedes vender artículos que NO están en la base de datos al momento de hacer una venta, por ejemplo: Bebidas, dulces, artículos esporádicos, etc.</p>
+          </div>
+        </div>
+
+        <!-- Opción 4: Cálculo automático de precio -->
+        <div class="opcion-item">
+          <div class="opcion-checkbox">
+            <input 
+              type="checkbox" 
+              id="calcularPrecio" 
+              [(ngModel)]="opcionesHabilitadas.calcularPrecioAutomatico">
+            <label for="calcularPrecio" class="opcion-titulo">
+              Calcular automáticamente precio de venta con el margen de ganancia del
+            </label>
+          </div>
+          <div class="opcion-input-inline">
+            <input 
+              type="number" 
+              class="input-porcentaje" 
+              [(ngModel)]="opcionesHabilitadas.margenGanancia"
+              [disabled]="!opcionesHabilitadas.calcularPrecioAutomatico"
+              min="0"
+              max="100">
+            <span class="simbolo-porcentaje">%</span>
+            <span class="texto-complemento">al crear, modificar o ingresar inventario a los productos.</span>
+          </div>
+        </div>
+
+        <!-- Opción 5: Redondeo de centavos -->
+        <div class="opcion-item">
+          <div class="opcion-checkbox">
+            <input 
+              type="checkbox" 
+              id="redondearCentavos" 
+              [(ngModel)]="opcionesHabilitadas.redondearCentavos">
+            <label for="redondearCentavos" class="opcion-titulo">
+              Habilitar redondeo de centavos a cantidad cerrada
+            </label>
+          </div>
+          <div class="opcion-input-full">
+            <input 
+              type="text" 
+              class="input-texto" 
+              [(ngModel)]="opcionesHabilitadas.redondeoDecimales"
+              [disabled]="!opcionesHabilitadas.redondearCentavos"
+              placeholder="A décimas (Ej: 45.52 -> 45.60, 35.18 -> 35.20)">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Botón guardar -->
+      <div class="acciones-detalle">
+        <button class="btn-guardar-config" (click)="guardarOpcionesHabilitadas()">
+          <i class="fa fa-save" aria-hidden="true"></i>
+          Guardar configuración
+        </button>
+        <button class="btn-cancelar-config" (click)="volverAPrincipal()">
+          <i class="fa fa-times" aria-hidden="true"></i>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

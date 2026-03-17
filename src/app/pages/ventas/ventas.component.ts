@@ -11,6 +11,7 @@ import VentaInterface from 'src/app/interfaces/ventas.interface';
 import { VentasdbService } from 'src/app/services/ventasdb.service';
 import { DocumentReference, Timestamp } from '@angular/fire/firestore';
 import { TeclasService } from 'src/app/services/teclas.service';
+import { ConfiguracionService } from 'src/app/services/configuracion.service';
 
 @Component({
   selector: 'app-ventas',
@@ -68,10 +69,14 @@ export class VentasComponent implements OnInit {
       if (this.idVentaActivaInterno) this.restarCantidad(this.rowSelected); 
     }
 
-    if((event.code == 'Numpad0' || event.code == 'Numpad1' || event.code == 'Numpad2' || event.code == 'Numpad3'
-        || event.code == 'Numpad4' || event.code == 'Numpad5' || event.code == 'Numpad6' || event.code == 'Numpad7'
-        || event.code == 'Numpad8' || event.code == 'Numpad9')  && this.idVentaActivaInterno) {  // Al presionar numeros, poner focus en el cuadro de codigo de barras
-      
+    // Al presionar números (numpad o teclado) o letras, poner focus en el cuadro de código de barras
+    // Esto permite que tanto el teclado manual como el escáner de código de barras enfoquen el input
+    const esNumeroOLetra = 
+      (event.code >= 'Digit0' && event.code <= 'Digit9') ||  // Números del teclado principal
+      (event.code >= 'Numpad0' && event.code <= 'Numpad9') || // Números del numpad
+      (event.code >= 'KeyA' && event.code <= 'KeyZ');         // Letras
+    
+    if(esNumeroOLetra && this.idVentaActivaInterno) {
       // Verificar si el usuario está escribiendo en un input o textarea
       const elementoActivo = document.activeElement as HTMLElement;
       const esInputOTextarea = elementoActivo && (
@@ -104,6 +109,7 @@ export class VentasComponent implements OnInit {
 
   @Input() modalCerrado;
   @ViewChild('modalBusquedaProductos') modalBusquedaProductos: ElementRef;
+  @ViewChild('buscarProductosComponent') buscarProductosComponent: BuscarProductosComponent;
   // @ViewChild('modalCobrarVenta') modalCobrarVenta: ElementRef;
   @ViewChild('modalProductoComun') modalProductoComun: ElementRef;
   @ViewChild('modalEntradaDinero') modalEntradaDinero: ElementRef;
@@ -128,7 +134,8 @@ export class VentasComponent implements OnInit {
               private router: Router,
               private productosService: ProductosService,
               private ventasdbService: VentasdbService,
-              private teclas: TeclasService) { }
+              private teclas: TeclasService,
+              private configuracionService: ConfiguracionService) { }
 
   rowSelected: string = '0';
   efectivoInicialEnCaja: string = localStorage.getItem('efectivoInicialEnCaja');
@@ -408,6 +415,11 @@ export class VentasComponent implements OnInit {
     // -----------------------------------------------------------------
 
     if(id == 3) { // Abrir modal de busqueda de productos
+      // Refrescar datos del componente antes de abrir el modal
+      if (this.buscarProductosComponent) {
+        await this.buscarProductosComponent.refrescarDatos();
+      }
+      
       Swal.fire({
           allowOutsideClick: false,
           html: this.modalBusquedaProductos.nativeElement,
@@ -644,6 +656,46 @@ export class VentasComponent implements OnInit {
           }
         })
       } else {
+        // Verificar si está habilitado el control de inventario
+        const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+        if (config && config.usarInventarios) {
+          const inventarioActual = productos[0].inventario || 0;
+          
+          // Calcular cantidad ya agregada en la venta actual
+          let cantidadEnVenta = 0;
+          this.productosVentaActual = JSON.parse(localStorage.getItem("productosEnVentasLS"));
+          if (this.productosVentaActual) {
+            const productoEnVenta = this.productosVentaActual.find(
+              p => p.id === productos[0].id && p.ventaId === this.idVentaActivaInterno
+            );
+            if (productoEnVenta) {
+              cantidadEnVenta = productoEnVenta.cantidad || 0;
+            }
+          }
+          
+          // Verificar si hay suficiente inventario
+          const cantidadTotal = cantidadEnVenta + cantidad;
+          if (cantidadTotal > inventarioActual) {
+            Swal.fire({
+              title: 'Inventario insuficiente',
+              html: `
+                <p><strong>${productos[0].descripcion}</strong></p>
+                <p>Inventario disponible: <strong>${inventarioActual}</strong></p>
+                <p>Ya en venta: <strong>${cantidadEnVenta}</strong></p>
+                <p>Intentando agregar: <strong>${cantidad}</strong></p>
+                <p class="text-danger">No hay suficiente inventario para completar esta operación.</p>
+              `,
+              icon: 'error',
+              confirmButtonText: 'Aceptar',
+              didClose: () => {
+                const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
+                inputPalabraClave.focus();
+              }
+            });
+            return; // Salir sin agregar el producto
+          }
+        }
+        
         if(productos[0].seVende == 1) { // Productos que se venden por pieza
 
           this.beep();
@@ -681,11 +733,26 @@ export class VentasComponent implements OnInit {
           let cantidadProductoInput: HTMLInputElement; 
           let importeInput: HTMLInputElement;
 
+          // Verificar inventario disponible
+          const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+          let inventarioInfo = '';
+          if (config && config.usarInventarios) {
+            const inventarioActual = productos[0].inventario || 0;
+            inventarioInfo = `
+              <div class="col-sm-12">
+                <div class="alert alert-info" style="margin: 10px 0;">
+                  <strong>Inventario disponible:</strong> ${inventarioActual}
+                </div>
+              </div>
+            `;
+          }
+
           Swal.fire({
             allowOutsideClick: false,
             title: productos[0].descripcion,
             html: `<div class="container ">
                 <div class="row">
+                  ${inventarioInfo}
                   <div class="col-sm-6">
                     Cantidad del producto: <br/>
                     <input type="number" id="cantidad" class="swal2-input w-100" style="margin: 5px 0 !important">
@@ -723,11 +790,37 @@ export class VentasComponent implements OnInit {
               }
               cantidadProductoInput.focus();
             },
-            preConfirm: () => {
+            preConfirm: async () => {
               const cantidad = cantidadProductoInput.value
               if (cantidad == '' || parseFloat(cantidad) <= 0) {
                 Swal.showValidationMessage(`Introduce una cantidad válida`)
+                return false;
               } else {
+                // Verificar inventario si está habilitado
+                const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+                if (config && config.usarInventarios) {
+                  const inventarioActual = productos[0].inventario || 0;
+                  
+                  // Calcular cantidad ya agregada en la venta actual
+                  let cantidadEnVenta = 0;
+                  if (this.productosVentaActual && this.productosVentaActual.length > 0) {
+                    const productoEnVenta = this.productosVentaActual.find(
+                      p => p.id === productos[0].id && p.ventaId === this.idVentaActivaInterno
+                    );
+                    if (productoEnVenta) {
+                      cantidadEnVenta = productoEnVenta.cantidad || 0;
+                    }
+                  }
+                  
+                  const cantidadTotal = cantidadEnVenta + parseFloat(cantidad);
+                  if (cantidadTotal > inventarioActual) {
+                    Swal.showValidationMessage(
+                      `Inventario insuficiente. Disponible: ${inventarioActual}, Ya en venta: ${cantidadEnVenta}`
+                    );
+                    return false;
+                  }
+                }
+                
                 if (this.productosVentaActual.length !== 0) {
                   this.productosVentaActual.forEach((prod, index) => {
                     if (prod.id == productos[0].id && prod.ventaId == this.idVentaActivaInterno) {
@@ -761,6 +854,7 @@ export class VentasComponent implements OnInit {
 
                 // productos[0].cantidad = parseFloat(cantidadProductoInput.value);
                 // this.productosVentaActual.push(...productos);
+                return true;
               }
             },
             didClose: () => {
@@ -809,11 +903,46 @@ export class VentasComponent implements OnInit {
     }
   }
 
-  agregarCantidad(id) {
+  async agregarCantidad(id) {
     console.log(id)
     let item = this.productosVentaActual.findIndex(i => i.id === id && i.ventaId == this.idVentaActivaInterno);
     if(item>-1) {
       if(this.productosVentaActual[item].seVende == 1) {  // Permitir incrementar solo cuando es venta por pieza
+        
+        // Validar inventario si está habilitado
+        const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+        if (config && config.usarInventarios) {
+          const productoDoc = await this.productosService.obtenerProductoPorId(id);
+          
+          if (productoDoc) {
+            const inventarioActual = productoDoc.inventario || 0;
+            
+            // Calcular cuántos productos de este tipo ya están en la venta (incluyendo el que queremos agregar)
+            const cantidadEnVenta = this.productosVentaActual
+              .filter(p => p.id === id && p.ventaId === this.idVentaActivaInterno)
+              .reduce((sum, p) => sum + p.cantidad, 0);
+            
+            const cantidadTotal = cantidadEnVenta + 1; // +1 es el que queremos agregar ahora
+            
+            if (cantidadTotal > inventarioActual) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Inventario insuficiente',
+                html: `
+                  <p><strong>${productoDoc.descripcion}</strong></p>
+                  <p class="mb-1">Inventario disponible: <strong>${inventarioActual}</strong></p>
+                  <p class="mb-1">Ya en venta: <strong>${cantidadEnVenta}</strong></p>
+                  <p>No puedes agregar más unidades.</p>
+                `,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#3085d6'
+              });
+              return; // No permitir agregar
+            }
+          }
+        }
+        
+        // Si pasó la validación (o no está activo el inventario), agregar cantidad
         this.productosVentaActual[item].cantidad += 1;
         this.productosVentaActual[item].importe = this.productosVentaActual[item].cantidad * this.productosVentaActual[item].precioVenta;
         localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));

@@ -278,7 +278,7 @@
         </h3>
         <div class="tabla-resumen">
           <div class="fila-resumen">
-            <span class="label">Devoluciones:</span>
+            <span class="label">Cancelaciones:</span>
             <span class="valor negativo">{{ formatearMoneda(totalDevoluciones) }}</span>
           </div>
           <div class="fila-resumen">
@@ -314,11 +314,11 @@
       </div>
     </div>
 
-    <!-- Devoluciones -->
+    <!-- Cancelaciones -->
     <div class="seccion-reporte">
       <h3 class="titulo-seccion">
-        <i class="fa fa-undo" aria-hidden="true"></i>
-        Devoluciones
+        <i class="fa fa-ban" aria-hidden="true"></i>
+        Cancelaciones de Ventas
       </h3>
       <div class="tabla-devoluciones" *ngIf="devoluciones.length > 0">
         <table>
@@ -340,13 +340,13 @@
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="3" class="text-right"><strong>Total Devoluciones:</strong></td>
+              <td colspan="3" class="text-right"><strong>Total Cancelaciones:</strong></td>
               <td class="text-right negativo"><strong>{{ formatearMoneda(totalDevoluciones) }}</strong></td>
             </tr>
           </tfoot>
         </table>
       </div>
-      <p class="mensaje-vacio" *ngIf="devoluciones.length === 0">No hay devoluciones en este período</p>
+      <p class="mensaje-vacio" *ngIf="devoluciones.length === 0">No hay cancelaciones en este período</p>
     </div>
 
     <!-- Pagos de Créditos (Pendiente) -->

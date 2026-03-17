@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { TeclasService } from 'src/app/services/teclas.service';
+import { ConfiguracionService } from 'src/app/services/configuracion.service';
 
 @Component({
   selector: 'app-buscar-productos',
@@ -49,17 +50,22 @@ export class BuscarProductosComponent implements OnInit, OnDestroy {
   ProductoSeleccionado: ProductoInterface;
   display = "none";
   activarBotonAceptar=false;
+  mostrarInventario: boolean = false;
 
   constructor(private productosService: ProductosService,
               private departamentosService: DepartamentosService,
               private el: ElementRef,
               private router: Router,
-              private teclas: TeclasService) { }
+              private teclas: TeclasService,
+              private configuracionService: ConfiguracionService) { }
 
-  ngOnInit() {
+  async ngOnInit() {
     // Asegurar que el modal esté cerrado al inicializar
     this.display = "none";
     this.ProductoSeleccionado = <ProductoInterface>{};
+    
+    // Cargar configuración para saber si mostrar inventario
+    await this.cargarConfiguracion();
     
     const inputPalabraClave= this.el.nativeElement.querySelector("#palabraClave");
     inputPalabraClave.focus();
@@ -90,6 +96,25 @@ export class BuscarProductosComponent implements OnInit, OnDestroy {
     // Limpiar estado al destruir el componente
     this.display = "none";
     this.ProductoSeleccionado = <ProductoInterface>{};
+  }
+
+  async cargarConfiguracion() {
+    try {
+      const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+      this.mostrarInventario = config ? config.usarInventarios || false : false;
+    } catch (error) {
+      console.error('Error al cargar configuración:', error);
+      this.mostrarInventario = false;
+    }
+  }
+
+  /**
+   * Método público para refrescar productos y configuración
+   * Se llama cada vez que se abre el modal
+   */
+  async refrescarDatos() {
+    await this.cargarConfiguracion();
+    await this.actualizarProductos();
   }
 
   actualizarProductos () {

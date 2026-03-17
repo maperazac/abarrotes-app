@@ -213,6 +213,30 @@
         text-align: center;
       }
 
+      .col-inventario {
+        text-align: center;
+        
+        .badge-inventario {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 45px;
+          padding: 0.35rem 0.75rem;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          font-weight: 700;
+          font-size: 0.9rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+          
+          &.bajo {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+            animation: pulso 2s ease-in-out infinite;
+          }
+        }
+      }
+
       .col-departamento {
         text-align: center;
         font-size: 0.85rem;
@@ -656,5 +680,17 @@
     min-width: 120px;
     padding: 0.65rem 1.25rem;
     font-size: 0.85rem;
+  }
+}
+
+// ==================== ANIMACIONES ====================
+@keyframes pulso {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
   }
 }

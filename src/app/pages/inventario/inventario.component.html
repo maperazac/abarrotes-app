@@ -1,0 +1,442 @@
+<div class="inventario-container">
+  <!-- Header con pestañas -->
+  <div class="header-inventario">    
+    <div class="pestanas-container">
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'agregar'"
+        (click)="cambiarVista('agregar')">
+        <i class="fa fa-plus-circle" aria-hidden="true"></i>
+        <span>Agregar a Inv.</span>
+      </button>
+      
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'ajustes'"
+        (click)="cambiarVista('ajustes')">
+        <i class="fa fa-wrench" aria-hidden="true"></i>
+        <span>Ajustes</span>
+      </button>
+      
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'bajos'"
+        (click)="cambiarVista('bajos')">
+        <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+        <span>Productos bajos en Inventario</span>
+      </button>
+      
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'reporte'"
+        (click)="cambiarVista('reporte')">
+        <i class="fa fa-file-text-o" aria-hidden="true"></i>
+        <span>Reporte de Inventario</span>
+      </button>
+      
+      <button 
+        class="pestana" 
+        [class.activa]="vistaActual === 'movimientos'"
+        (click)="cambiarVista('movimientos')">
+        <i class="fa fa-exchange" aria-hidden="true"></i>
+        <span>Reporte de Movimientos</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="contenido-inventario">
+    
+    <!-- Vista: Agregar Inventario -->
+    <div *ngIf="vistaActual === 'agregar'" class="vista-agregar">
+      <div class="formulario-card">
+        <h2 class="titulo-seccion">
+          <i class="fa fa-plus-circle" aria-hidden="true"></i>
+          Agregar Inventario
+        </h2>
+        
+        <div class="formulario-agregar">
+          <!-- Búsqueda de Producto -->
+          <div class="seccion-busqueda">
+            <label class="etiqueta-campo">Código del Producto</label>
+            <div class="input-grupo">
+              <input 
+                type="text" 
+                class="input-campo"
+                [(ngModel)]="codigoProducto"
+                (keyup.enter)="onEnterCodigoProducto($event)"
+                placeholder="Escanea o escribe el código"
+                autofocus>
+              <button 
+                class="btn-buscar" 
+                (click)="buscarProducto()"
+                [disabled]="buscandoProducto">
+                <i class="fa" 
+                   [ngClass]="buscandoProducto ? 'fa-spinner fa-spin' : 'fa-search'" 
+                   aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Información del producto encontrado -->
+          <div *ngIf="productoEncontrado" class="info-producto">
+            <!-- Grid de información -->
+            <div class="grid-info">
+              <div class="info-item">
+                <label>Producto</label>
+                <div class="valor">{{ productoEncontrado.descripcion }}</div>
+              </div>
+              
+              <div class="info-item inventario-actual">
+                <label>Inventario Actual</label>
+                <div class="valor grande">{{ productoEncontrado.inventario || 0 }}</div>
+              </div>
+            </div>
+
+            <!-- Formulario de agregar -->
+            <div class="form-agregar">
+              <div class="campo-cantidad">
+                <label>Cantidad a Agregar</label>
+                <input 
+                  type="number" 
+                  class="input-cantidad"
+                  [(ngModel)]="cantidadAgregar"
+                  min="1"
+                  placeholder="0">
+              </div>
+
+              <button 
+                class="btn-agregar" 
+                (click)="agregarInventario()">
+                <i class="fa fa-plus" aria-hidden="true"></i>
+                Agregar
+              </button>
+            </div>
+          </div>
+
+          <!-- Mensaje cuando no hay producto -->
+          <div *ngIf="!productoEncontrado && !buscandoProducto" class="mensaje-vacio">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <p>Busca un producto para agregar inventario</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista: Ajustes -->
+    <div *ngIf="vistaActual === 'ajustes'" class="vista-agregar">
+      <div class="formulario-card">
+        <h2 class="titulo-seccion">
+          <i class="fa fa-wrench" aria-hidden="true"></i>
+          Ajustes de Inventario
+        </h2>
+
+        <div class="formulario-agregar">
+          <!-- Búsqueda del producto -->
+          <div class="seccion-busqueda">
+            <label class="etiqueta-campo">Código del Producto</label>
+            <div class="input-grupo">
+              <input 
+                type="text" 
+                class="input-campo"
+                [(ngModel)]="codigoProductoAjuste"
+                (keydown.enter)="onEnterCodigoProductoAjuste($event)"
+                placeholder="Escanea o ingresa el código"
+                [disabled]="buscandoProductoAjuste">
+              <button 
+                class="btn-buscar" 
+                (click)="buscarProductoAjuste()"
+                [disabled]="buscandoProductoAjuste">
+                <i class="fa" [ngClass]="buscandoProductoAjuste ? 'fa-spinner fa-spin' : 'fa-search'" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Información del producto encontrado -->
+          <div *ngIf="productoEncontradoAjuste" class="info-producto">
+            <div class="grid-info">
+              <div class="info-item">
+                <label>Descripción</label>
+                <div class="valor">{{ productoEncontradoAjuste.descripcion }}</div>
+              </div>
+
+              <div class="info-item inventario-actual">
+                <label>Cantidad Actual</label>
+                <div class="valor grande">{{ productoEncontradoAjuste.inventario || 0 }}</div>
+              </div>
+            </div>
+
+            <!-- Formulario de ajuste -->
+            <div class="form-ajuste">
+              <div class="campo-cantidad">
+                <label>Nueva cantidad</label>
+                <input 
+                  type="number" 
+                  class="input-cantidad"
+                  [(ngModel)]="nuevaCantidadAjuste"
+                  min="0"
+                  placeholder="0">
+              </div>
+
+              <div class="campo-diferencia">
+                <label>Diferencia</label>
+                <div class="valor-diferencia" [ngClass]="{
+                  'positivo': calcularDiferencia() > 0,
+                  'negativo': calcularDiferencia() < 0,
+                  'neutral': calcularDiferencia() === 0
+                }">
+                  {{ calcularDiferencia() > 0 ? '+' : '' }}{{ calcularDiferencia() }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Mensajes de confirmación -->
+            <div class="mensajes-ajuste">
+              <div class="mensaje-confirmacion">
+                <i class="fa fa-check-circle" aria-hidden="true"></i>
+                <span>Establecer {{ nuevaCantidadAjuste }} unidades como nuevo inventario de este producto</span>
+              </div>
+              <div class="mensaje-advertencia">
+                <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                <span>Al hacer un ajuste, la cantidad ingresada, reemplazará la cantidad anterior de inventario del producto.</span>
+              </div>
+            </div>
+
+            <button 
+              class="btn-ajustar" 
+              (click)="realizarAjuste()">
+              <i class="fa fa-check" aria-hidden="true"></i>
+              Realizar Ajuste
+            </button>
+          </div>
+
+          <!-- Mensaje cuando no hay producto -->
+          <div *ngIf="!productoEncontradoAjuste && !buscandoProductoAjuste" class="mensaje-vacio">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <p>Busca un producto para realizar ajustes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista: Productos Bajos (Placeholder) -->
+    <div *ngIf="vistaActual === 'bajos'" class="vista-placeholder">
+      <div class="placeholder-card">
+        <i class="fa fa-exclamation-triangle fa-5x" aria-hidden="true"></i>
+        <h2>Productos Bajos en Inventario</h2>
+        <p>Esta funcionalidad estará disponible próximamente</p>
+      </div>
+    </div>
+
+    <!-- Vista: Reporte -->
+    <div *ngIf="vistaActual === 'reporte'" class="vista-reporte">
+      <div class="contenedor-reporte">
+        <!-- Métricas superiores -->
+        <div class="metricas-reporte">
+          <div class="metrica-card">
+            <div class="metrica-label">Costo del inventario</div>
+            <div class="metrica-valor">${{ calcularCostoInventario().toFixed(2) }}</div>
+          </div>
+          <div class="metrica-card">
+            <div class="metrica-label">Cantidad de productos en Inventario</div>
+            <div class="metrica-valor">{{ calcularCantidadProductos() }}</div>
+          </div>
+        </div>
+
+        <!-- Barra de filtros y acciones -->
+        <div class="barra-acciones-reporte">
+          <div class="filtro-departamento">
+            <label>Departamento:</label>
+            <select 
+              class="select-departamento"
+              [(ngModel)]="departamentoFiltroReporte"
+              (change)="onDepartamentoChange()">
+              <option value="todos">- Todos -</option>
+              <option *ngFor="let depto of departamentosReporte" [value]="depto.id">
+                {{ depto.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <div class="botones-acciones">
+            <button class="btn-accion btn-agregar-inv" (click)="cambiarVista('agregar')">
+              <i class="fa fa-plus" aria-hidden="true"></i>
+              Agregar Inventario
+            </button>
+            <button 
+              class="btn-accion btn-modificar" 
+              [disabled]="!productoSeleccionadoReporte"
+              (click)="modificarProductoSeleccionado()">
+              <i class="fa fa-edit" aria-hidden="true"></i>
+              Modificar Producto
+            </button>
+            <button class="btn-accion btn-exportar" disabled>
+              <i class="fa fa-download" aria-hidden="true"></i>
+              Exportar
+            </button>
+            <button class="btn-accion btn-imprimir" disabled>
+              <i class="fa fa-print" aria-hidden="true"></i>
+              Imprimir
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla de productos -->
+        <div class="contenedor-tabla-reporte">
+          <div *ngIf="cargandoReporte" class="loading-reporte">
+            <i class="fa fa-spinner fa-spin fa-3x" aria-hidden="true"></i>
+            <p>Cargando reporte...</p>
+          </div>
+
+          <table *ngIf="!cargandoReporte" class="tabla-reporte">
+            <thead>
+              <tr>
+                <th style="width: 8%">Código</th>
+                <th style="width: 35%">Descripción del Producto</th>
+                <th style="width: 12%">Costo</th>
+                <th style="width: 12%">Precio Venta</th>
+                <th style="width: 12%">Existencia</th>
+                <th style="width: 12%">Inv. Mínimo</th>
+              </tr>
+            </thead>
+            <tbody *ngIf="productosReporteFiltrados.length > 0; else sinProductos">
+              <tr 
+                *ngFor="let producto of productosReporteFiltrados; let i = index" 
+                class="fila-producto"
+                [class.seleccionada]="productoSeleccionadoReporte?.id === producto.id"
+                (click)="seleccionarProductoReporte(producto)">
+                <td class="col-codigo">{{ i + 1 }}</td>
+                <td class="col-descripcion">{{ producto.descripcion }}</td>
+                <td class="col-costo">${{ (producto.precioCosto || 0).toFixed(2) }}</td>
+                <td class="col-precio">${{ (producto.precioVenta || 0).toFixed(2) }}</td>
+                <td class="col-existencia" [ngClass]="{
+                  'stock-bajo': (producto.inventario || 0) > 0 && (producto.inventario || 0) < (producto.inventarioMinimo || 10),
+                  'sin-stock': (producto.inventario || 0) === 0
+                }">
+                  {{ producto.inventario !== undefined && producto.inventario !== null ? (producto.inventario).toFixed(2) : '-' }}
+                </td>
+                <td class="col-minimo">{{ producto.inventarioMinimo !== undefined && producto.inventarioMinimo !== null ? (producto.inventarioMinimo).toFixed(2) : '-' }}</td>
+              </tr>
+            </tbody>
+            <ng-template #sinProductos>
+              <tbody>
+                <tr>
+                  <td colspan="6" class="sin-resultados">
+                    <div class="mensaje-sin-resultados">
+                      <i class="fa fa-inbox fa-3x" aria-hidden="true"></i>
+                      <p>No hay productos para mostrar</p>
+                      <span>Cambia los filtros o agrega productos</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </ng-template>
+          </table>
+        </div>
+      </div>
+    </div>
+
+<!-- Vista: Movimientos -->
+    <div *ngIf="vistaActual === 'movimientos'" class="vista-movimientos">
+      <div class="contenedor-movimientos">
+
+        <!-- Filtros -->
+        <div class="filtros-movimientos">
+          <div class="filtro-item">
+            <label>Del día:</label>
+            <input 
+              type="date" 
+              class="input-filtro"
+              [(ngModel)]="fechaSeleccionada"
+              (change)="onFechaChange()">
+          </div>
+
+          <div class="filtro-item filtro-buscar">
+            <label>Buscar por:</label>
+            <input 
+              type="text" 
+              class="input-filtro input-busqueda"
+              [(ngModel)]="textoBusqueda"
+              (keyup)="onBusquedaChange()"
+              placeholder="Cajero, Producto o Departamento">
+          </div>
+
+          <div class="filtro-item">
+            <label>Movimientos:</label>
+            <select 
+              class="input-filtro select-filtro"
+              [(ngModel)]="tipoMovimientoFiltro"
+              (change)="onTipoMovimientoChange()">
+              <option value="todos">- Todos -</option>
+              <option value="entrada">Entrada</option>
+              <option value="salida">Salida</option>
+              <option value="venta">Venta</option>
+              <option value="devolucion">Devolución</option>
+              <option value="ajuste">Ajuste</option>
+            </select>
+          </div>
+
+          <div class="filtro-item">
+            <label>Caja:</label>
+            <select class="input-filtro select-filtro" disabled>
+              <option>Caja Principal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabla de movimientos -->
+        <div class="contenedor-tabla-movimientos">
+          <div *ngIf="cargandoMovimientos" class="loading-movimientos">
+            <i class="fa fa-spinner fa-spin fa-3x" aria-hidden="true"></i>
+            <p>Cargando movimientos...</p>
+          </div>
+
+          <table *ngIf="!cargandoMovimientos" class="tabla-movimientos">
+            <thead>
+              <tr>
+                <th style="width: 10%">Hora</th>
+                <th style="width: 25%">Descripción del Producto</th>
+                <th style="width: 10%">Había</th>
+                <th style="width: 12%">Tipo</th>
+                <th style="width: 10%">Cantidad</th>
+                <th style="width: 18%">Cajero</th>
+                <th style="width: 15%">Departamento</th>
+              </tr>
+            </thead>
+            <tbody *ngIf="movimientosFiltrados.length > 0; else sinMovimientos">
+              <tr *ngFor="let movimiento of movimientosFiltrados" class="fila-movimiento">
+                <td class="col-hora">{{ formatearHora(movimiento.fecha) }}</td>
+                <td class="col-descripcion">{{ movimiento.descripcionProducto }}</td>
+                <td class="col-habia">{{ movimiento.cantidadAnterior }}</td>
+                <td class="col-tipo">
+                  <span class="badge-tipo" [ngClass]="obtenerClaseTipo(movimiento.tipo)">
+                    <i *ngIf="movimiento.tipo !== 'SALIDA' && movimiento.tipo !== 'VENTA'" class="fa" [ngClass]="obtenerIconoTipo(movimiento.tipo)" aria-hidden="true"></i>
+                    {{ movimiento.tipo }}
+                    <i *ngIf="movimiento.tipo === 'SALIDA' || movimiento.tipo === 'VENTA'" class="fa" [ngClass]="obtenerIconoTipo(movimiento.tipo)" aria-hidden="true"></i>
+                  </span>
+                </td>
+                <td class="col-cantidad">{{ movimiento.cantidadMovimiento }}</td>
+                <td class="col-cajero">{{ movimiento.nombreCajero || 'Sin nombre' }}</td>
+                <td class="col-depto">{{ movimiento.nombreDepartamento || '- Sin Departamento -' }}</td>
+              </tr>
+            </tbody>
+            <ng-template #sinMovimientos>
+              <tbody>
+                <tr>
+                  <td colspan="7" class="sin-resultados">
+                    <div class="mensaje-sin-resultados">
+                      <i class="fa fa-inbox fa-3x" aria-hidden="true"></i>
+                      <p>No hay movimientos para mostrar</p>
+                      <span>Selecciona una fecha o cambia los filtros</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </ng-template>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

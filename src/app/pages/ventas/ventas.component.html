@@ -1,7 +1,7 @@
 <div class="ventas-wrapper">
-  <!-- Barra de búsqueda mejorada -->
-  <div class="barra-busqueda">
-    <div class="container-busqueda">
+  <!-- Barra de búsqueda y botones en una línea -->
+  <div class="barra-herramientas">
+    <div class="container-herramientas">
       <form (submit)="agregarProductoVentaActual(buscarProducto.palabraClave)" class="form-busqueda">
         <div class="input-wrapper">
           <i class="fa fa-barcode icono-busqueda"></i>
@@ -14,7 +14,7 @@
             name="codigoDeProducto" 
             id="codigoDeProducto" 
             #codigoDeProducto 
-            placeholder="Escanea o ingresa código del producto" 
+            placeholder="Escanea código" 
             autocomplete="off">
           <button 
             tabindex="-1" 
@@ -23,14 +23,13 @@
             (click)="agregarProductoVentaActual(buscarProducto.palabraClave)" 
             type="button">
             <i class="fa fa-plus"></i>
-            Agregar
           </button>
         </div>
       </form>
+      
+      <app-ventas-navbar (evento)="procesarEvento($event)"></app-ventas-navbar>
     </div>
   </div>
-
-  <app-ventas-navbar (evento)="procesarEvento($event)"></app-ventas-navbar>
 
   <div class="contenedor-ventas animated fadeIn faster" [ngClass]="ventas.length == 0 ? 'sin-ventas' : ''">
 
@@ -147,7 +146,7 @@
 <!-- MODAL PARA BUSQUEDA DE PRODUCTOS -->
 <div style="display: none;"> 
   <div #modalBusquedaProductos>
-    <app-buscar-productos [esVenta] = true></app-buscar-productos>    
+    <app-buscar-productos #buscarProductosComponent [esVenta] = true></app-buscar-productos>    
   </div>
 </div>
 
