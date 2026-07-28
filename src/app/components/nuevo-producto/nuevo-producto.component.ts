@@ -8,6 +8,7 @@ import { BuscarProductoModel } from 'src/app/models/buscarProducto.model';
 import { ProductoModel } from 'src/app/models/producto.model';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { ProductosService } from 'src/app/services/productos.service';
+import { ConfiguracionService } from 'src/app/services/configuracion.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -28,14 +29,17 @@ export class NuevoProductoComponent implements OnInit {
   deptos: DepartamentoInterface[] = [];
   nombreNuevoDepartamento: string;
   formularioInvalido = false;
+  codigoOriginal: string = ''; // Para guardar el código original al modificar
+  calculoAutomaticoHabilitado: boolean = false; // Para controlar el comportamiento de ganancia
 
   constructor( private productosService: ProductosService, 
                private el: ElementRef,
                private route: ActivatedRoute,
                private router: Router,
-               private departamentosService: DepartamentosService) {
+               private departamentosService: DepartamentosService,
+               private configuracionService: ConfiguracionService) {
     this.formulario = new FormGroup({
-      // id: new FormControl(),
+      id: new FormControl(),
       codigoDeBarras: new FormControl(),
       descripcion: new FormControl(),
       seVende: new FormControl(),
@@ -50,19 +54,26 @@ export class NuevoProductoComponent implements OnInit {
   ngOnInit() {    
     this.sub = this.route.params.subscribe(params => {
       // debugger;
-      this.id = +params['id']; // (+) converts string 'id' to a number
+      const codigoBarras = params['id']; // Obtener el código de barras (puede ser número o string)
 
-      if(!Number.isNaN(this.id)) {
+      // Si existe un código de barras en los parámetros, es una modificación
+      if(codigoBarras) {
         this.esModificacion = true;
         
-        this.buscarProducto.palabraClave = this.id.toString();
+        // Usar el código tal cual viene (string o número)
+        this.buscarProducto.palabraClave = codigoBarras;
 
         this.buscarProductoPorCodigoDeBaras();
+        
+        // También cargar configuración para mantener comportamiento consistente
+        this.cargarEstadoConfiguracion();
 
         setTimeout(() => {
           this.botonSeleccionado.emit(2)
         }, 100);
       } else {
+        // Si es un nuevo producto, cargar ganancia por defecto de configuración
+        this.cargarGananciaPorDefecto();
         // setTimeout(() => {
         //   this.botonSeleccionado.emit(1)
         // }, 100);
@@ -126,6 +137,12 @@ export class NuevoProductoComponent implements OnInit {
       }
     }
 
+    // Si no tiene código de barras, generar uno automático
+    if (!this.formulario.controls['codigoDeBarras'].value || this.formulario.controls['codigoDeBarras'].value.trim() === '') {
+      const codigoGenerado = 'SIN-CB-' + Date.now();
+      this.formulario.patchValue({codigoDeBarras: codigoGenerado});
+    }
+
     Swal.fire({
       title: 'Espere',
       text: 'Guardando producto',
@@ -135,10 +152,19 @@ export class NuevoProductoComponent implements OnInit {
     Swal.showLoading();
 
     let esRepetido = false;
+    const codigoDeBarras = this.formulario.controls['codigoDeBarras'].value;
 
-    await this.validarProductoRepetido(this.formulario.controls['codigoDeBarras'].value).then(resp => {
-      esRepetido = resp;
-    });
+    // Validar duplicados:
+    // - En modo creación: siempre validar excepto si es código generado
+    // - En modo modificación: validar solo si el código cambió y no es generado
+    const codigoCambio = this.esModificacion && codigoDeBarras !== this.codigoOriginal;
+    const debeValidar = (!this.esModificacion || codigoCambio) && !codigoDeBarras.startsWith('SIN-CB-');
+    
+    if (debeValidar) {
+      await this.validarProductoRepetido(codigoDeBarras).then(resp => {
+        esRepetido = resp;
+      });
+    }
 
     if(!this.esModificacion) {
       if(esRepetido) {
@@ -155,7 +181,10 @@ export class NuevoProductoComponent implements OnInit {
           
          }
       } else {
-        await this.productosService.crearProducto(this.formulario.value).then( docRef => {
+        // Crear objeto sin el campo 'id' para nuevos productos
+        const { id, ...productoData } = this.formulario.value;
+        
+        await this.productosService.crearProducto(productoData).then( docRef => {
           console.log(docRef)
           Swal.fire({
             title: this.formulario.controls['descripcion'].value,
@@ -176,15 +205,27 @@ export class NuevoProductoComponent implements OnInit {
     }
 
     if(this.esModificacion) {
-      let inputIdProducto = document.getElementById("idProducto");
-      await this.productosService.modificarProducto(this.formulario.value, inputIdProducto.innerHTML).then( () => {
+      if(esRepetido) {
         Swal.fire({
-          title: this.formulario.controls['descripcion'].value,
-          text: 'Se actualizó correctamente',
-          icon: 'success'
+          title: 'Código repetido',
+          text: 'Ya existe un producto registrado con este código de barras. Por favor verifique.',
+          icon: 'warning',
+          didClose: () => {
+            const codigoDeBarras= this.el.nativeElement.querySelector("#codigoDeBarras");
+            codigoDeBarras.focus();
+          }
         })
-      })
-      .catch(e => console.log('Error: ', e));
+      } else {
+        const productoId = this.formulario.controls['id'].value;
+        await this.productosService.modificarProducto(this.formulario.value, productoId).then( () => {
+          Swal.fire({
+            title: this.formulario.controls['descripcion'].value,
+            text: 'Se actualizó correctamente',
+            icon: 'success'
+          })
+        })
+        .catch(e => console.log('Error: ', e));
+      }
     }
   }
 
@@ -225,8 +266,22 @@ export class NuevoProductoComponent implements OnInit {
     if(event.target.value== '') {
       this.formulario.patchValue({precioMayoreo: 0});
       this.formulario.patchValue({precioVenta: 0});
-      this.formulario.patchValue({ganancia: 0});
+      
+      // Solo resetear ganancia si NO está habilitado el cálculo automático
+      if (!this.calculoAutomaticoHabilitado) {
+        this.formulario.patchValue({ganancia: 0});
+      }
       return;
+    }
+
+    // Si hay un porcentaje de ganancia, calcular automáticamente los precios
+    const ganancia = this.formulario.controls['ganancia'].value;
+    if (ganancia && ganancia > 0) {
+      const precioCosto = parseFloat(event.target.value);
+      const nuevoPrecio = Math.ceil(precioCosto * (1 + (ganancia / 100)));
+      
+      this.formulario.patchValue({precioMayoreo: nuevoPrecio});
+      this.formulario.patchValue({precioVenta: nuevoPrecio});
     }
   }
 
@@ -234,12 +289,11 @@ export class NuevoProductoComponent implements OnInit {
     if (!this.formulario.controls['precioCosto'].value) {
       this.formulario.patchValue({precioMayoreo: 0});
       this.formulario.patchValue({precioVenta: 0});
-      this.formulario.patchValue({ganancia: 0});
+      // No resetear ganancia aquí, se está escribiendo en el campo de ganancia
       return;
     } 
-    // this.producto.precioMayoreo = this.producto.precioVenta = this.producto.precioCosto * (1 + ( event.target.value / 100)) < 0 ? 0 : parseFloat((Math.round((this.producto.precioCosto * (1 + ( event.target.value / 100))) * 10) / 10).toString());
 
-    const nuevoPrecio = this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100)) < 0 ? 0 : parseFloat((Math.round((this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100))) * 10) / 10).toString())
+    const nuevoPrecio = this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100)) < 0 ? 0 : Math.ceil(this.formulario.controls['precioCosto'].value * (1 + ( event.target.value / 100)));
     
     this.formulario.patchValue({precioMayoreo: nuevoPrecio});
     this.formulario.patchValue({precioVenta: nuevoPrecio});
@@ -249,7 +303,11 @@ export class NuevoProductoComponent implements OnInit {
     if (!this.formulario.controls['precioCosto'].value) {
       this.formulario.patchValue({precioMayoreo: 0});
       this.formulario.patchValue({precioVenta: 0});
-      this.formulario.patchValue({ganancia: 0});
+      
+      // Solo resetear ganancia si NO está habilitado el cálculo automático
+      if (!this.calculoAutomaticoHabilitado) {
+        this.formulario.patchValue({ganancia: 0});
+      }
       return;
     } 
 
@@ -285,9 +343,8 @@ export class NuevoProductoComponent implements OnInit {
           icon: 'warning'
         })
       } else {
-        let inputIdProducto = document.getElementById("idProducto");
-        inputIdProducto.innerHTML = productos[0].id
         this.formulario.setValue({
+          id: productos[0].id,
           codigoDeBarras: productos[0].codigoDeBarras,
           descripcion: productos[0].descripcion,
           seVende: productos[0].seVende,
@@ -297,6 +354,8 @@ export class NuevoProductoComponent implements OnInit {
           precioMayoreo: productos[0].precioMayoreo,
           departamento: productos[0].departamento
         })
+        // Guardar el código original para validación de duplicados
+        this.codigoOriginal = productos[0].codigoDeBarras;
         Swal.close();
       }
     })
@@ -318,5 +377,38 @@ export class NuevoProductoComponent implements OnInit {
     })
   }
 
+  async cargarGananciaPorDefecto(): Promise<void> {
+    try {
+      // Cargar configuración desde Firestore
+      const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+      
+      if (config) {
+        // Guardar el estado de cálculo automático
+        this.calculoAutomaticoHabilitado = config.calcularPrecioAutomatico || false;
+        
+        // Si está activado el cálculo automático, pre-llenar el campo ganancia
+        if (config.calcularPrecioAutomatico && config.margenGanancia) {
+          this.formulario.patchValue({ ganancia: config.margenGanancia });
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar configuración de ganancia:', error);
+      // No mostrar error al usuario, simplemente no pre-llenar el campo
+    }
+  }
+
+  async cargarEstadoConfiguracion(): Promise<void> {
+    try {
+      // Cargar solo el estado de configuración sin modificar el formulario
+      const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+      
+      if (config) {
+        // Guardar el estado de cálculo automático
+        this.calculoAutomaticoHabilitado = config.calcularPrecioAutomatico || false;
+      }
+    } catch (error) {
+      console.error('Error al cargar estado de configuración:', error);
+    }
+  }
 
 }

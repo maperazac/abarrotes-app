@@ -1,0 +1,24 @@
+<div class="barra-estado">
+  <div class="info-ultima-venta">
+    <div class="info-item">
+      <span class="label">Última venta - Total:</span>
+      <span class="valor">{{ total | currency: '$' }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Pagó con:</span>
+      <span class="valor">{{ pagoCon | currency: '$' }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Cambio:</span>
+      <span class="valor">{{ cambio | currency: '$' }}</span>
+    </div>
+  </div>
+  <div class="acciones">
+    <button class="btn btn-sm btn-outline-primary" (click)="reimprimirTicket()" [disabled]="!ultimaVenta">
+      <i class="fa fa-print"></i> Reimprimir último ticket
+    </button>
+    <button class="btn btn-sm btn-outline-info" (click)="verVentasDelDia()">
+      <i class="fa fa-list"></i> Ventas del día y devoluciones
+    </button>
+  </div>
+</div>

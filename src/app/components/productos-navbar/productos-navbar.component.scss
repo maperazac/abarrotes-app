@@ -1,3 +1,146 @@
-hr {
-    margin: 0;
+// ==================== CONTENEDOR NAVBAR ====================
+.productos-navbar-container {
+  background: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.botones-grupo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+// ==================== BOTONES DE NAVEGACIÓN ====================
+.btn-navbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  .icono {
+    font-size: 1.1rem;
+    color: #64748b;
+    transition: all 0.2s ease;
+  }
+
+  .texto {
+    font-weight: 600;
+  }
+
+  // Estado hover
+  &:hover {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-color: #94a3b8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+    .icono {
+      color: #1e3c72;
+      transform: scale(1.1);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  // Estado activo
+  &.btn-activo {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border-color: #1e3c72;
+    color: white;
+    box-shadow: 0 4px 8px rgba(30, 60, 114, 0.3);
+
+    .icono {
+      color: white;
+    }
+  }
+}
+
+// ==================== VARIANTE ELIMINAR ====================
+.btn-eliminar-nav {
+  &:hover:not(.btn-activo) {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #ef4444;
+    color: #dc2626;
+    
+    .icono {
+      color: #dc2626;
+    }
+  }
+}
+
+// ==================== SEPARADOR VERTICAL ====================
+.separador-vertical {
+  width: 2px;
+  height: 32px;
+  background: linear-gradient(180deg, transparent 0%, #cbd5e0 20%, #cbd5e0 80%, transparent 100%);
+  margin: 0 0.5rem;
+}
+
+// ==================== RESPONSIVE ====================
+@media (max-width: 1400px) {
+  .botones-grupo {
+    gap: 0.5rem;
+  }
+
+  .btn-navbar {
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+
+    .icono {
+      font-size: 1rem;
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .productos-navbar-container {
+    padding: 0.6rem 1rem;
+  }
+
+  .btn-navbar {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .productos-navbar-container {
+    padding: 0.5rem;
+  }
+
+  .botones-grupo {
+    gap: 0.4rem;
+  }
+
+  .btn-navbar {
+    padding: 0.45rem 0.75rem;
+
+    .texto {
+      display: none;
+    }
+
+    .icono {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+  }
+
+  .separador-vertical {
+    height: 28px;
+  }
 }

@@ -1,22 +1,395 @@
-.functionKeys {
-    // padding: 3px 5px;
-    // margin-right: 5px;
-    // border-radius: 5px;
-    // border: solid 1px;
-    padding: 3px 5px;
-    margin-right: 5px;
-    border-radius: 5px;
-    border: solid 1px;
-    box-shadow: inset 0 0 4px #333333;
-    border-color: #fff;
-    background-color: #a09f9f;
-    color: #fff;
-    font-weight: 700;
+// ==================== CONTENEDOR FOOTER ====================
+.ventas-footer-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-top: 2px solid #e2e8f0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  min-height: 80px;
 }
 
-.totalVentaPesos {
-    background-color: rgb(220, 239, 255);
-    font-size: 55px;
-    color: blue;
-    overflow: hidden;
+// ==================== INFORMACIÓN DE PRODUCTOS ====================
+.info-productos {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 200px;
+
+  .icono-carrito {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border-radius: 12px;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 8px rgba(30, 60, 114, 0.2);
+  }
+
+  .texto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .cantidad-articulos {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1e3c72;
+      line-height: 1;
+    }
+
+    .label-articulos {
+      font-size: 0.875rem;
+      color: #64748b;
+      font-weight: 500;
+    }
+  }
+}
+
+// ==================== BOTONES DE ACCIÓN ====================
+.botones-accion {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  i {
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+  }
+
+  .texto {
+    font-weight: 600;
+  }
+
+  .tecla {
+    display: inline-block;
+    padding: 3px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    text-transform: uppercase;
+    color: #1e3c72;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    box-shadow: 0 2px 0 #cbd5e0;
+    min-width: 28px;
+  }
+
+  // Hover
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #94a3b8;
+
+    i {
+      transform: scale(1.1);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  // Disabled
+  &:disabled {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    i {
+      color: #cbd5e0;
+    }
+
+    &:hover {
+      transform: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+// Variantes de botones
+.btn-cambiar {
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #3b82f6;
+    color: #1e40af;
+
+    i {
+      color: #2563eb;
+    }
+  }
+}
+
+.btn-nueva {
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #10b981;
+    color: #065f46;
+
+    i {
+      color: #059669;
+    }
+  }
+}
+
+.btn-eliminar {
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #ef4444;
+    color: #991b1b;
+
+    i {
+      color: #dc2626;
+    }
+  }
+}
+
+// ==================== SECCIÓN COBRAR ====================
+.seccion-cobrar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 320px;
+}
+
+.btn-cobrar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  flex: 1;
+
+  i {
+    font-size: 1.3rem;
+  }
+
+  .tecla-cobrar {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    text-transform: uppercase;
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.2);
+    min-width: 32px;
+  }
+
+  .texto-cobrar {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+
+    i {
+      transform: scale(1.15);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  &:disabled {
+    background: linear-gradient(135deg, #cbd5e0 0%, #94a3b8 100%);
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    &:hover {
+      transform: none;
+      box-shadow: 0 4px 12px rgba(203, 213, 224, 0.3);
+    }
+  }
+}
+
+// ==================== TOTAL VENTA ====================
+.total-venta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);
+  min-width: 180px;
+
+  .label-total {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .monto-total {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+}
+
+// ==================== RESPONSIVE ====================
+@media (max-width: 1400px) {
+  .ventas-footer-container {
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+  }
+
+  .btn-footer {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-cobrar {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+  }
+
+  .total-venta .monto-total {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .ventas-footer-container {
+    flex-wrap: wrap;
+    min-height: auto;
+    padding: 0.75rem 1rem;
+  }
+
+  .info-productos {
+    min-width: auto;
+  }
+
+  .botones-accion {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .seccion-cobrar {
+    min-width: auto;
+    flex: 1;
+  }
+
+  .btn-footer .texto {
+    display: none;
+  }
+
+  .btn-footer {
+    padding: 0.6rem 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .ventas-footer-container {
+    gap: 0.75rem;
+    padding: 0.6rem;
+  }
+
+  .info-productos {
+    .icono-carrito {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+    }
+
+    .texto-info {
+      .cantidad-articulos {
+        font-size: 1.5rem;
+      }
+
+      .label-articulos {
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  .botones-accion {
+    gap: 0.5rem;
+  }
+
+  .btn-footer {
+    padding: 0.5rem 0.6rem;
+
+    i {
+      font-size: 1rem;
+    }
+
+    .tecla {
+      font-size: 9px;
+      padding: 2px 4px;
+    }
+  }
+
+  .btn-cobrar {
+    padding: 0.65rem 1rem;
+    font-size: 0.95rem;
+
+    i {
+      font-size: 1.1rem;
+    }
+
+    .texto-cobrar {
+      font-size: 0.95rem;
+    }
+  }
+
+  .total-venta {
+    padding: 0.6rem 1rem;
+    min-width: 140px;
+
+    .monto-total {
+      font-size: 1.5rem;
+    }
+  }
 }

@@ -6,11 +6,17 @@ import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ProductosComponent } from './pages/productos/productos.component';
 import { ConfiguracionComponent } from './pages/configuracion/configuracion.component';
+import { CorteCajaComponent } from './pages/corte-caja/corte-caja.component';
+import { InventarioComponent } from './pages/inventario/inventario.component';
+import { ClientesComponent } from './pages/clientes/clientes.component';
 
 const routes: Routes = [
   { path: 'ventas'    , component: VentasComponent, canActivate: [AuthGuard] },
   { path: 'productos'    , component: ProductosComponent, canActivate: [AuthGuard] },
   { path: 'configuracion'    , component: ConfiguracionComponent, canActivate: [AuthGuard] },
+  { path: 'inventario'    , component: InventarioComponent, canActivate: [AuthGuard] },
+  { path: 'clientes'    , component: ClientesComponent, canActivate: [AuthGuard] },
+  { path: 'corte'    , component: CorteCajaComponent, canActivate: [AuthGuard] },
   { path: 'productos/:id'    , component: ProductosComponent, canActivate: [AuthGuard] },
   { path: 'registro'  , component: RegistroComponent },
   { path: 'login'     , component: LoginComponent },

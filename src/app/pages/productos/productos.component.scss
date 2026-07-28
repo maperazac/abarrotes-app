@@ -1,0 +1,44 @@
+// ==================== CONTENEDOR PRINCIPAL ====================
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  width: 100%;
+}
+
+// ==================== ÁREA DE SCROLL ====================
+::ng-deep app-nuevo-producto,
+::ng-deep app-departamentos,
+::ng-deep app-ventas-por-periodo {
+  display: block;
+  height: calc(100vh - 80px); // Altura total menos navbar
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  // Estilo del scrollbar
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #cbd5e0 0%, #94a3b8 100%);
+    border-radius: 10px;
+    
+    &:hover {
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    }
+  }
+}
+
+// ==================== BUSCAR PRODUCTOS ====================
+::ng-deep app-buscar-productos {
+  display: block;
+  height: calc(100vh - 80px);
+  overflow: visible; // Cambiado de hidden a visible para permitir que el modal se muestre correctamente
+}

@@ -2,3 +2,14 @@
 
 /* Importing Bootstrap SCSS file. */
 @import "~bootstrap/scss/bootstrap";
+
+/* Custom SweetAlert2 styles para modal de búsqueda de productos */
+.modal-busqueda-sin-padding {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.modal-busqueda-html-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}

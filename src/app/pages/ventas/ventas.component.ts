@@ -7,8 +7,11 @@ import { BuscarProductoModel } from 'src/app/models/buscarProducto.model';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
 import { BuscarProductosComponent } from '../../components/buscar-productos/buscar-productos.component';
 import { Input } from '@angular/core';
-import { VentasService } from 'src/app/services/ventas.service';
 import VentaInterface from 'src/app/interfaces/ventas.interface';
+import { VentasdbService } from 'src/app/services/ventasdb.service';
+import { DocumentReference, Timestamp } from '@angular/fire/firestore';
+import { TeclasService } from 'src/app/services/teclas.service';
+import { ConfiguracionService } from 'src/app/services/configuracion.service';
 
 @Component({
   selector: 'app-ventas',
@@ -20,43 +23,75 @@ export class VentasComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
 
   handleKeyDown(event: KeyboardEvent) {
+    // Si no es una tecla permitida, prevenimos su acción predeterminada
+    if (!this.teclas.esTeclaPermitida(event)) {
+      event.preventDefault();
+      console.log(`Tecla bloqueada: ${event.key} (${event.code})`);
+    } 
+
     if(event.code == 'F10') {  // F10  para abrir popup de busqueda de productos
       event.preventDefault();
-      if (this.idVentaActiva) this.procesarEvento(3);
+      if (this.idVentaActivaInterno) this.procesarEvento(3);
     }
 
     if(event.code == 'F6') {  // F6 para iniciar una nueva venta
       event.preventDefault();
-      this.crearNuevaVenta();
+      if(!this.cambiandoDeVenta) this.crearNuevaVenta();
+    }
+
+    if(event.code == 'F7') {  // F7 para abrir el modal de entrada de dinero
+      event.preventDefault();
+      this.procesarEvento(5);
+    }
+
+    if(event.code == 'F8') {  // F8 para abrir el modal de salida de dinero
+      event.preventDefault();
+      this.procesarEvento(6);
     }
 
     if(event.code == 'Delete') {  // DEL para borrar elemento seleccionado de la venta actual
       event.preventDefault();
-      if (this.idVentaActiva) this.procesarEvento(7); 
+      if (this.idVentaActivaInterno) this.procesarEvento(7); 
     }
 
-    if((event.code == 'ArrowUp' || event.code == 'ArrowDown') && this.idVentaActiva) {  // Flecha arriba para navegacion en la tabla de productos en venta actual
+    if((event.code == 'ArrowUp' || event.code == 'ArrowDown') && this.idVentaActivaInterno) {  // Flecha arriba para navegacion en la tabla de productos en venta actual
       // event.preventDefault();
       this.navegacionConFlechas(event.code); 
     }
 
     if(event.code == 'NumpadAdd') {  // + Para aumentar la cantidad de un producto en 1
       event.preventDefault();
-      if (this.idVentaActiva) this.agregarCantidad(this.rowSelected); 
+      if (this.idVentaActivaInterno) this.agregarCantidad(this.rowSelected); 
     }
 
     if(event.code == 'NumpadSubtract') {  // - Para disminuir la cantidad de un producto en 1
       event.preventDefault();
-      if (this.idVentaActiva) this.restarCantidad(this.rowSelected); 
+      if (this.idVentaActivaInterno) this.restarCantidad(this.rowSelected); 
     }
 
-    if((event.code == 'Numpad0' || event.code == 'Numpad1' || event.code == 'Numpad2' || event.code == 'Numpad3'
-        || event.code == 'Numpad4' || event.code == 'Numpad5' || event.code == 'Numpad6' || event.code == 'Numpad7'
-        || event.code == 'Numpad8' || event.code == 'Numpad9')  && this.idVentaActiva) {  // Al presionar numeros, poner focus en el cuadro de codigo de barras
+    // Al presionar números (numpad o teclado) o letras, poner focus en el cuadro de código de barras
+    // Esto permite que tanto el teclado manual como el escáner de código de barras enfoquen el input
+    const esNumeroOLetra = 
+      (event.code >= 'Digit0' && event.code <= 'Digit9') ||  // Números del teclado principal
+      (event.code >= 'Numpad0' && event.code <= 'Numpad9') || // Números del numpad
+      (event.code >= 'KeyA' && event.code <= 'KeyZ');         // Letras
+    
+    if(esNumeroOLetra && this.idVentaActivaInterno) {
+      // Verificar si el usuario está escribiendo en un input o textarea
+      const elementoActivo = document.activeElement as HTMLElement;
+      const esInputOTextarea = elementoActivo && (
+        elementoActivo.tagName === 'INPUT' || 
+        elementoActivo.tagName === 'TEXTAREA' ||
+        elementoActivo.getAttribute('contenteditable') === 'true'
+      );
       
-      // this.restarCantidad(this.rowSelected);
-      const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
-      inputPalabraClave.focus(); 
+      // Solo mover el focus si NO está escribiendo en otro campo
+      if (!esInputOTextarea) {
+        const inputPalabraClave = this.el.nativeElement.querySelector("#codigoDeProducto");
+        if (inputPalabraClave) {
+          inputPalabraClave.focus();
+        }
+      }
     }
 
     // Usar para prevenir acciones combinadas como CTRL+P y poder usar comandos para controlar el sistema
@@ -68,13 +103,18 @@ export class VentasComponent implements OnInit {
 
       if((key === "P" || key === "p") && (ctrlKey || metaKey)){ // CTRL+P  Para abrir popup de producto común
         event.preventDefault();
-        if (this.idVentaActiva) this.procesarEvento(2);
+        if (this.idVentaActivaInterno) this.procesarEvento(2);
       }
   }
 
   @Input() modalCerrado;
   @ViewChild('modalBusquedaProductos') modalBusquedaProductos: ElementRef;
-  @ViewChild('modalCobrarVenta') modalCobrarVenta: ElementRef;
+  @ViewChild('buscarProductosComponent') buscarProductosComponent: BuscarProductosComponent;
+  // @ViewChild('modalCobrarVenta') modalCobrarVenta: ElementRef;
+  @ViewChild('modalProductoComun') modalProductoComun: ElementRef;
+  @ViewChild('modalEntradaDinero') modalEntradaDinero: ElementRef;
+  @ViewChild('modalSalidaDinero') modalSalidaDinero: ElementRef;
+  @ViewChild('modalVentasDelDia') modalVentasDelDia: any;
   modalBusquedaProductosAbierto = false;
   buscarProducto = new BuscarProductoModel();
   productosVentaActual: ProductoInterface[] = [];
@@ -84,36 +124,42 @@ export class VentasComponent implements OnInit {
   inputProductoSeleccionado: HTMLInputElement 
   ventas: VentaInterface[] = [];
   idVentaActiva: number;
+  idVentaActivaInterno; // Es el id interno de la venta activa, el que registra firestore automaticamente. Se usa para guardar los productos de la venta en detalleVentas
+  cargandoVentas = true;
+  cambiandoDeVenta = false;
+  duracionEnSegundos = 0;
 
   constructor(private auth: AuthService,
               private el: ElementRef,
               private router: Router,
               private productosService: ProductosService,
-              private ventasService: VentasService) { }
+              private ventasdbService: VentasdbService,
+              private teclas: TeclasService,
+              private configuracionService: ConfiguracionService) { }
 
   rowSelected: string = '0';
   efectivoInicialEnCaja: string = localStorage.getItem('efectivoInicialEnCaja');
 
-  ngOnInit() {
+  ngOnInit() {    
     this.efectivoInicialRegistrado();
     this.obtenerVentasActivas();
     this.obtenerProductosEnVentasActuales();
     
-    this.ventasService.$ventasActuales.subscribe((valor) => {
+    this.ventasdbService.$ventasActuales.subscribe((valor) => {
       this.ventas = valor;
-      // this.productosVentaActual = valor;
-      // this.cantidadArticulos = 0;
-      // this.ventaTotalPesos = 0;
-      // this.productosVentaActual.map(item => {
-      //   this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
-      //   this.ventaTotalPesos += item.cantidad * item.precioVenta;
-      // })
     })
 
-    this.ventasService.$idVentaActiva.subscribe((id) => {
+    this.ventasdbService.$idVentaActiva.subscribe((id) => {
       this.idVentaActiva = id;
-      // console.log("Venta activa:" ,this.idVentaActiva)
-    })    
+    })   
+
+    this.ventasdbService.$idVentaActivaInterno.subscribe((idInterno) => {
+      this.idVentaActivaInterno = idInterno;
+    })
+    
+    this.ventasdbService.$cambiandoDeVenta.subscribe((estado) => {
+      this.cambiandoDeVenta = estado;
+    })
   }
 
   ngAfterViewInit() {
@@ -121,33 +167,104 @@ export class VentasComponent implements OnInit {
       inputPalabraClave.focus();
   }
 
-  async obtenerVentasActivas() {  // Revisa en localstorage si hay ventas pendientes y abiertas, en caso de que no exista, se crea una nueva.
-    const ventas: VentaInterface[] = JSON.parse(localStorage.getItem("ventasLS"))
-    if(ventas == null || ventas.length == 0) { // Si no existen ventas en el localstorage, se inserta una nueva
-      let nuevaVenta = {
-        idTemp: this.getRandomInt(1000000, 9999999),
-        fecha: new Date(),
-        totalVenta: '0',
-        totalArticulos: '0',
-        tipoPago: 1,
-        totalPagadoEfectivo: '0',
-        totalPagadoCredito: '0',
-        cambio: '0',
-        pagoCon: '0',
-        idCajero: '0',
-        status: '1',
-        seleccionada: 1
-      }
-      this.ventasService.agregarVentaLocalstorage(nuevaVenta) // Y esa nueva creada, se agrega al localstorage
-      this.ventas.push(nuevaVenta); // Y tambien se agrega a "ventas" para que se muestre en las pestañas de ventas
-      // this.idVentaActiva = nuevaVenta.idTemp;
-      localStorage.setItem("productosEnVentasLS", JSON.stringify([]));
-      this.seleccionarComoVentaActiva(nuevaVenta.idTemp) // Como no habia ninguna, esta nueva creada se marca como la venta activa (pestaña abierta)
-    } else { // En caso contrario, que ya existan ventas pendientes en el localstorage, solo se obtienen y se asignan a la variable "ventas" para mostrar las pestañas
-      this.ventas = ventas;
-      this.ventas.forEach(el => {
-        if (el.seleccionada) this.seleccionarComoVentaActiva(el.idTemp) // Aqui se revisa cual de las ventas en el localstorage viene con "seleccionada" = 1 para seguir dejando esta activa
+  async ventasPorStatus(status: string){
+    const ventas: any[] = [];
+
+    try {
+      await this.ventasdbService.obtenerVentasPorStatus(status).then(docRef => {
+        docRef.forEach ( venta => {
+          ventas.push({
+            id: venta.id,
+            ...venta.data()
+          })
+        })
       })
+      
+      // Ordenar manualmente en el cliente
+      if (status === "0") {
+        // Para ventas en curso, ordenar por fechaVentaIniciada
+        ventas.sort((a, b) => {
+          const fechaA = a.fechaVentaIniciada?.toDate?.() || new Date(0);
+          const fechaB = b.fechaVentaIniciada?.toDate?.() || new Date(0);
+          return fechaA.getTime() - fechaB.getTime();
+        });
+      } else {
+        // Para ventas finalizadas, ordenar por fechaVentaFinalizada
+        ventas.sort((a, b) => {
+          const fechaA = a.fechaVentaFinalizada?.toDate?.() || new Date(0);
+          const fechaB = b.fechaVentaFinalizada?.toDate?.() || new Date(0);
+          return fechaA.getTime() - fechaB.getTime();
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('Error al obtener ventas por status:', error);
+      console.error('Código de error:', error.code);
+      console.error('Mensaje de error:', error.message);
+      
+      let errorMessage = 'No se pudo conectar a Firebase.';
+      let errorDetails = '';
+      
+      if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+        errorMessage = 'Falta crear un índice en Firestore';
+        errorDetails = 'Ve a la consola de Firebase (Firestore Database → Indexes) y crea el índice necesario. El enlace para crearlo aparece en la consola del navegador (F12).';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Permisos denegados en Firestore';
+        errorDetails = 'Las reglas de seguridad de Firestore están bloqueando el acceso. Ve a Firestore Database → Rules en la consola de Firebase.';
+      } else if (error.message?.includes('network') || error.message?.includes('offline')) {
+        errorMessage = 'Sin conexión a internet';
+        errorDetails = 'Verifica tu conexión a internet y que Firebase esté accesible.';
+      }
+      
+      Swal.fire({
+        icon: 'error',
+        title: errorMessage,
+        text: errorDetails,
+        footer: `<small>Error técnico: ${error.code || error.message}</small>`
+      });
+    }
+
+    // this.ventasdbService.actualizarVentasActuales(ventas);
+
+    return ventas;
+  }
+
+  async obtenerVentasActivas(event?: { esFinalizada: boolean }) {  // Revisa en localstorage si hay ventas pendientes y abiertas. El parametro esFinalizada solo se recibe cuando se acaba de finalizar una venta, en ese caso, si fue la ultima venta que estaba activa, si se tiene que abrir una venta nueva.
+    // const ventas: VentaInterface[] = JSON.parse(localStorage.getItem("ventasLS"))
+    this.cambiandoDeVenta = true;
+
+    try {
+      const ventas = await this.ventasPorStatus("0");
+
+      this.ventasdbService.$ventasActuales.emit(ventas);
+
+        // this.ventas = ventas;
+
+        if(ventas == null || ventas.length == 0) { // Si no existen ventas en base de datos con status = 0 (en curso), se inserta una nueva
+          if(event && event.esFinalizada) {
+           this.crearNuevaVenta(); 
+          } else {
+            this.ventasdbService.$idVentaActiva.emit(0);
+            this.ventasdbService.$idVentaActivaInterno.emit(0);
+          }        
+        } else { // En caso contrario, que ya existan ventas en curso en base de datos, solo se obtienen y se asignan a la variable "ventas" para mostrar las pestañas
+          this.ventas = ventas;
+          let existeSeleccionada = false;
+          this.ventas.forEach(el => {
+            if (el.seleccionada) {
+              existeSeleccionada = true;
+              this.seleccionarComoVentaActiva(el.idTemp, el.id) // Aqui se revisa cual de las ventas en el localstorage viene con "seleccionada" = 1 para seguir dejando esta activa
+            }
+          })
+          if(!existeSeleccionada){
+            this.seleccionarComoVentaActiva(this.ventas[this.ventas.length - 1].idTemp, this.ventas[this.ventas.length - 1].id); // Si ninguna venta de base de datos trae el status "seleccionada" en 1, entonces se selecciona la ultima venta creada
+          }
+        }
+    } catch (error) {
+      console.error('Error al obtener ventas activas:', error);
+    } finally {
+      this.cargandoVentas = false;
+      this.cambiandoDeVenta = false;
     }
   }
 
@@ -155,7 +272,7 @@ export class VentasComponent implements OnInit {
     const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS")) // Se obtiene el localstorage con los productos que se han agregado a ventas actuales
     if(productosEnVentasActuales != null && productosEnVentasActuales.length > 0) { // Se revisa si el localstorage trae algo, en ese caso, se asigna a productosVentaActual
       this.productosVentaActual = productosEnVentasActuales;
-      this.ventasService.$productosVentaActual.emit(this.productosVentaActual); // Y se emite el array para tenerlo disponible en otros componentes de la aplicacion, en este caso el footer para mostrar los totales.
+      this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual); // Y se emite el array para tenerlo disponible en otros componentes de la aplicacion, en este caso el footer para mostrar los totales.
     } else {
       localStorage.setItem("productosEnVentasLS", JSON.stringify([]));
     }
@@ -214,39 +331,19 @@ export class VentasComponent implements OnInit {
       let precioProducto: HTMLInputElement; 
 
       const { value: formValues } = await Swal.fire({
-        title: 'Producto común',
-        html: `
-        <div style="text-align: left;">
-          <div>
-          Descripción del producto: <br/>
-          <input type="text" id="descripcionProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 98%; height: auto;">
-        </div> <br/>
-        <div style="display: flex">
-        <div style="width: 50%;">
-          Cantidad: <br/>
-          <input type="number" min="0" step="1" id="cantidadProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
-        </div>
-        <div style="width: 3%; display: flex; align-items: center; margin-top: 20px; margin-right: 2px;"><i class="fa fa-times"></i></div>
-        
-        <div style="width: 50%;">
-          Precio unitario: <br/>
-          <input type="number" id="precioProductoComun" class="swal2-input" style="margin: 4px; padding: 10px; width: 95%; height: auto;">
-        </div>
-        `,
+        html: this.modalProductoComun.nativeElement,
         allowOutsideClick: false,
         focusConfirm: false,
         allowEscapeKey: true,
         width: '500px',
-        showConfirmButton: true,
-        confirmButtonText: "Aceptar",
-        showCancelButton: true,
-        cancelButtonText: "Cancelar",
+        showConfirmButton: false,
+        showCancelButton: false,
         preConfirm: () => {
-          return [
-            (<HTMLInputElement>document.getElementById("descripcionProductoComun")).value,
-            (<HTMLInputElement>document.getElementById("cantidadProductoComun")).value,
-            (<HTMLInputElement>document.getElementById("precioProductoComun")).value
-          ];
+          // return [
+          //   (<HTMLInputElement>document.getElementById("descripcionProductoComun")).value,
+          //   (<HTMLInputElement>document.getElementById("cantidadProductoComun")).value,
+          //   (<HTMLInputElement>document.getElementById("precioProductoComun")).value
+          // ];
         },
         didOpen: () => {
           const popup = Swal.getPopup()!
@@ -254,76 +351,86 @@ export class VentasComponent implements OnInit {
           cantidadProducto = popup.querySelector('#cantidadProductoComun') as HTMLInputElement
           precioProducto = popup.querySelector('#precioProductoComun') as HTMLInputElement
 
-          (descripcionProducto).onkeyup = (event) => {
-            if (event.key === 'Enter') {
-              if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
-                Swal.showValidationMessage(`Es necesario llenar todos los campos`);
-              } else {
-                Swal.clickConfirm();
-              }
-            }
-          }
+          // (descripcionProducto).onkeyup = (event) => {
+          //   if (event.key === 'Enter') {
+          //     if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
+          //       Swal.showValidationMessage(`Es necesario llenar todos los campos`);
+          //     } else {
+          //       Swal.clickConfirm();
+          //     }
+          //   }
+          // }
 
-          (cantidadProducto).onkeyup = (event) => {
-            if (event.key === 'Enter') {
-              if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
-                Swal.showValidationMessage(`Es necesario llenar todos los campos`);
-              } else {
-                Swal.clickConfirm();
-              }
-            }
-          }
+          // (cantidadProducto).onkeyup = (event) => {
+          //   if (event.key === 'Enter') {
+          //     if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
+          //       Swal.showValidationMessage(`Es necesario llenar todos los campos`);
+          //     } else {
+          //       Swal.clickConfirm();
+          //     }
+          //   }
+          // }
 
-          (precioProducto).onkeyup = (event) => {
-            if (event.key === 'Enter') {
-              if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
-                Swal.showValidationMessage(`Es necesario llenar todos los campos`);
-              } else {
-                Swal.clickConfirm();
-              }
-            }
-          }
+          // (precioProducto).onkeyup = (event) => {
+          //   if (event.key === 'Enter') {
+          //     if(descripcionProducto.value == '' || cantidadProducto.value == '' || precioProducto.value == '') {
+          //       Swal.showValidationMessage(`Es necesario llenar todos los campos`);
+          //     } else {
+          //       Swal.clickConfirm();
+          //     }
+          //   }
+          // }
 
 
         },
         didClose: () => {
-          const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
-          inputPalabraClave.focus();
+          // const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
+          // inputPalabraClave.focus();
         }
       });
-      if (formValues && formValues[0] != '' && formValues[1] != '' && formValues[2] != '') {
-        const nuevoProductoComun: ProductoInterface = {
-          id: this.getRandomInt(1000000, 9999999).toString(),
-          codigoDeBarras: '0',
-          descripcion: formValues[0],
-          seVende: 1,
-          precioCosto: 0,
-          ganancia: 0,
-          precioVenta: formValues[2],
-          precioMayoreo: formValues[2],
-          departamento: "0",
-          cantidad: parseFloat(formValues[1]),
-          ventaId: this.idVentaActiva
-        }
-        this.productosVentaActual.push(nuevoProductoComun);
-        localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
-        this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
-        this.selectRow(nuevoProductoComun.id)
-      } else {
-        // console.log("llene todos los campos")
-      }
+      // if (formValues && formValues[0] != '' && formValues[1] != '' && formValues[2] != '') {
+      //   const nuevoProductoComun: ProductoInterface = {
+      //     id: this.getRandomInt(1000000, 9999999).toString(),
+      //     codigoDeBarras: '0',
+      //     descripcion: formValues[0],
+      //     seVende: 0,
+      //     precioCosto: 0,
+      //     ganancia: 0,
+      //     precioVenta: formValues[2],
+      //     precioMayoreo: formValues[2],
+      //     departamento: "0",
+      //     cantidad: parseFloat(formValues[1]),
+      //     ventaId: this.idVentaActivaInterno,
+      //     importe: formValues[2] * parseFloat(formValues[1])
+      //   }
+      //   this.productosVentaActual.push(nuevoProductoComun);
+      //   localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
+      //   this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual)
+      //   this.selectRow(nuevoProductoComun.id)
+      // } else {
+      //   // console.log("llene todos los campos")
+      // }
     }
 
     // -----------------------------------------------------------------
 
     if(id == 3) { // Abrir modal de busqueda de productos
+      // Refrescar datos del componente antes de abrir el modal
+      if (this.buscarProductosComponent) {
+        await this.buscarProductosComponent.refrescarDatos();
+      }
+      
       Swal.fire({
           allowOutsideClick: false,
           html: this.modalBusquedaProductos.nativeElement,
           focusConfirm: false,
           allowEscapeKey: false,
-          width: '1000px',
+          width: '900px',
           showConfirmButton: false,
+          customClass: {
+            popup: 'modal-busqueda-sin-padding',
+            htmlContainer: 'modal-busqueda-html-container'
+          },
           didOpen:() => {
             const popup = Swal.getPopup()!
             this.busquedaInput = popup.querySelector('#palabraClave') as HTMLInputElement
@@ -343,13 +450,70 @@ export class VentasComponent implements OnInit {
             // console.log(inputProductoSeleccionado.value)
           }
         }).then(res=>{
-          // NO BORRAR!!!!!!!!!!!!!!!!!! USAR PARA AGREGAR EL PRODUCTO SELECCIONADO A LA LISTA DE ARTICULOS PARA VENTA
           if(this.inputProductoSeleccionado.value != '') {
             this.agregarProductoVentaActual(this.inputProductoSeleccionado.value)
           } else {
             // console.log("nada que agregar")
           }
         })
+    }
+
+    // -----------------------------------------------------------------
+
+    if (id == 5) {  // Abrir modal de entrada de dinero
+      Swal.fire({
+        allowOutsideClick: false,
+        html: this.modalEntradaDinero.nativeElement,
+        focusConfirm: false,
+        allowEscapeKey: true,
+        width: '700px',
+        showConfirmButton: false,
+        showCancelButton: false,
+        customClass: {
+          popup: 'modal-busqueda-sin-padding',
+          htmlContainer: 'modal-busqueda-html-container'
+        },
+        didOpen: () => {
+          const popup = Swal.getPopup()!
+          const cantidadInput = popup.querySelector('#cantidad') as HTMLInputElement
+          cantidadInput.focus();
+        },
+        didClose: () => {
+          setTimeout(() => {
+            const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
+            inputCodigoDeProducto.focus();
+          }, 100);
+        }
+      })
+    }
+
+    // -----------------------------------------------------------------
+
+    if (id == 6) {  // Abrir modal de salida de dinero
+      Swal.fire({
+        allowOutsideClick: false,
+        html: this.modalSalidaDinero.nativeElement,
+        focusConfirm: false,
+        allowEscapeKey: true,
+        width: '700px',
+        showConfirmButton: false,
+        showCancelButton: false,
+        customClass: {
+          popup: 'modal-busqueda-sin-padding',
+          htmlContainer: 'modal-busqueda-html-container'
+        },
+        didOpen: () => {
+          const popup = Swal.getPopup()!
+          const cantidadInput = popup.querySelector('#cantidadSalida') as HTMLInputElement
+          cantidadInput.focus();
+        },
+        didClose: () => {
+          setTimeout(() => {
+            const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
+            inputCodigoDeProducto.focus();
+          }, 100);
+        }
+      })
     }
 
     // -----------------------------------------------------------------
@@ -379,10 +543,39 @@ export class VentasComponent implements OnInit {
     }
   }
 
+  insertarProductoComun(producto: any) {
+    const nuevoProductoComun: ProductoInterface = {
+      id: this.getRandomInt(1000000, 9999999).toString(),
+      codigoDeBarras: '0',
+      descripcion: producto.descripcionProductoComun,
+      seVende: 0,
+      precioCosto: 0,
+      ganancia: 0,
+      precioVenta: producto.precioProductoComun,
+      precioMayoreo: producto.precioProductoComun,
+      departamento: "0",
+      cantidad: parseFloat(producto.cantidadProductoComun),
+      ventaId: this.idVentaActivaInterno,
+      importe: producto.precioProductoComun * parseFloat(producto.cantidadProductoComun)
+    }
+    this.productosVentaActual.push(nuevoProductoComun);
+    localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
+    this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual)
+    this.selectRow(nuevoProductoComun.id)
+
+    Swal.close();
+  }
+
+  redondearImporte(precioVenta: number, cantidad: number) {
+    let importe = (precioVenta * cantidad);
+    let precioRedoneado = Math.ceil(importe); // Redondea siempre hacia arriba al siguiente entero
+    return precioRedoneado;
+  }
+
   navegacionConFlechas(codigo: string) {
     let actualizado = false;
     let elemento = <HTMLInputElement>document.querySelector('input[name=productosRadioSelect]:checked')
-    let prodVentaActiva = this.productosVentaActual.filter(p => p.ventaId == this.idVentaActiva);
+    let prodVentaActiva = this.productosVentaActual.filter(p => p.ventaId == this.idVentaActivaInterno);
     if(elemento){
       prodVentaActiva.forEach((prod, index) => {
         if( prod.id == this.rowSelected && !actualizado) {
@@ -445,7 +638,7 @@ export class VentasComponent implements OnInit {
         productos.push({
           id: producto.id,
           cantidad: cantidad,
-          ventaId: this.idVentaActiva,
+          ventaId: this.idVentaActivaInterno,
           ...producto.data()
         })
       })
@@ -463,55 +656,103 @@ export class VentasComponent implements OnInit {
           }
         })
       } else {
+        // Verificar si está habilitado el control de inventario
+        const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+        if (config && config.usarInventarios) {
+          const inventarioActual = productos[0].inventario || 0;
+          
+          // Calcular cantidad ya agregada en la venta actual
+          let cantidadEnVenta = 0;
+          this.productosVentaActual = JSON.parse(localStorage.getItem("productosEnVentasLS"));
+          if (this.productosVentaActual) {
+            const productoEnVenta = this.productosVentaActual.find(
+              p => p.id === productos[0].id && p.ventaId === this.idVentaActivaInterno
+            );
+            if (productoEnVenta) {
+              cantidadEnVenta = productoEnVenta.cantidad || 0;
+            }
+          }
+          
+          // Verificar si hay suficiente inventario
+          const cantidadTotal = cantidadEnVenta + cantidad;
+          if (cantidadTotal > inventarioActual) {
+            Swal.fire({
+              title: 'Inventario insuficiente',
+              html: `
+                <p><strong>${productos[0].descripcion}</strong></p>
+                <p>Inventario disponible: <strong>${inventarioActual}</strong></p>
+                <p>Ya en venta: <strong>${cantidadEnVenta}</strong></p>
+                <p>Intentando agregar: <strong>${cantidad}</strong></p>
+                <p class="text-danger">No hay suficiente inventario para completar esta operación.</p>
+              `,
+              icon: 'error',
+              confirmButtonText: 'Aceptar',
+              didClose: () => {
+                const inputPalabraClave= this.el.nativeElement.querySelector("#codigoDeProducto");
+                inputPalabraClave.focus();
+              }
+            });
+            return; // Salir sin agregar el producto
+          }
+        }
+        
         if(productos[0].seVende == 1) { // Productos que se venden por pieza
 
           this.beep();
           this.productosVentaActual = JSON.parse(localStorage.getItem("productosEnVentasLS"));
           
-          if (this.productosVentaActual.filter(p => p.ventaId == this.idVentaActiva).length !== 0) {  // Si ya existen articulos en la venta activa actual
+          if (this.productosVentaActual.filter(p => p.ventaId == this.idVentaActivaInterno).length !== 0) {  // Si ya existen articulos en la venta activa actual
             this.productosVentaActual.forEach(prod => {
-              if (prod.id == productos[0].id && prod.ventaId == this.idVentaActiva) {
-                item = this.productosVentaActual.findIndex(i => i.id === productos[0].id && i.ventaId == this.idVentaActiva)
+              if (prod.id == productos[0].id && prod.ventaId == this.idVentaActivaInterno) {
+                item = this.productosVentaActual.findIndex(i => i.id === productos[0].id && i.ventaId == this.idVentaActivaInterno)
                 productoRepetido = true;
                 return;
               } 
             })
   
-            productoRepetido ? this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + cantidad : this.productosVentaActual.push(...productos);
+            if (productoRepetido) {
+              this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + cantidad;
+              this.productosVentaActual[item].importe = this.productosVentaActual[item].importe + (this.productosVentaActual[item].precioVenta * cantidad);
+            } else {
+              this.productosVentaActual.push(...productos.map(producto =>({
+                ...producto,
+                importe: producto.precioVenta * cantidad
+              })));
+            }
             
           } else {
-            this.productosVentaActual.push(...productos)
+            this.productosVentaActual.push(...productos.map(producto => ({
+              ...producto, 
+              importe: producto.precioVenta * cantidad
+            })))
           }
         }
 
         if (productos[0].seVende == 2) { // Productos que se venden a granel
 
-
-          // if (this.productosVentaActual.length !== 0) {
-          //   this.productosVentaActual.forEach(prod => {
-          //     if (prod.id == productos[0].id) {
-          //       item = this.productosVentaActual.findIndex(i => i.id === productos[0].id)
-          //       productoRepetido = true;
-          //       return;
-          //     } 
-          //   })
-  
-          //   productoRepetido ? this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + cantidad : this.productosVentaActual.push(...productos);
-            
-          // } else {
-          //   this.productosVentaActual.push(...productos)
-          // }
-
-
-
           let cantidadProductoInput: HTMLInputElement; 
           let importeInput: HTMLInputElement;
+
+          // Verificar inventario disponible
+          const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+          let inventarioInfo = '';
+          if (config && config.usarInventarios) {
+            const inventarioActual = productos[0].inventario || 0;
+            inventarioInfo = `
+              <div class="col-sm-12">
+                <div class="alert alert-info" style="margin: 10px 0;">
+                  <strong>Inventario disponible:</strong> ${inventarioActual}
+                </div>
+              </div>
+            `;
+          }
 
           Swal.fire({
             allowOutsideClick: false,
             title: productos[0].descripcion,
             html: `<div class="container ">
                 <div class="row">
+                  ${inventarioInfo}
                   <div class="col-sm-6">
                     Cantidad del producto: <br/>
                     <input type="number" id="cantidad" class="swal2-input w-100" style="margin: 5px 0 !important">
@@ -541,20 +782,48 @@ export class VentasComponent implements OnInit {
                   Swal.clickConfirm() 
                 } else {
                   if (cantidadProductoInput.value != '') {
-                    importeInput.value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((parseFloat(cantidadProductoInput.value) * productos[0].precioVenta)).toString()
+                    let precioRedoneado = this.redondearImporte(productos[0].precioVenta, parseFloat(cantidadProductoInput.value));
+                    
+                    importeInput.value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(precioRedoneado).toString()
                   } else importeInput.value = '$0.00'
                 }
               }
               cantidadProductoInput.focus();
             },
-            preConfirm: () => {
+            preConfirm: async () => {
               const cantidad = cantidadProductoInput.value
               if (cantidad == '' || parseFloat(cantidad) <= 0) {
                 Swal.showValidationMessage(`Introduce una cantidad válida`)
+                return false;
               } else {
+                // Verificar inventario si está habilitado
+                const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+                if (config && config.usarInventarios) {
+                  const inventarioActual = productos[0].inventario || 0;
+                  
+                  // Calcular cantidad ya agregada en la venta actual
+                  let cantidadEnVenta = 0;
+                  if (this.productosVentaActual && this.productosVentaActual.length > 0) {
+                    const productoEnVenta = this.productosVentaActual.find(
+                      p => p.id === productos[0].id && p.ventaId === this.idVentaActivaInterno
+                    );
+                    if (productoEnVenta) {
+                      cantidadEnVenta = productoEnVenta.cantidad || 0;
+                    }
+                  }
+                  
+                  const cantidadTotal = cantidadEnVenta + parseFloat(cantidad);
+                  if (cantidadTotal > inventarioActual) {
+                    Swal.showValidationMessage(
+                      `Inventario insuficiente. Disponible: ${inventarioActual}, Ya en venta: ${cantidadEnVenta}`
+                    );
+                    return false;
+                  }
+                }
+                
                 if (this.productosVentaActual.length !== 0) {
                   this.productosVentaActual.forEach((prod, index) => {
-                    if (prod.id == productos[0].id && prod.ventaId == this.idVentaActiva) {
+                    if (prod.id == productos[0].id && prod.ventaId == this.idVentaActivaInterno) {
                       // item = this.productosVentaActual.findIndex(i => i.id === productos[0].id && prod.ventaId == this.idVentaActiva)
                       item = index;
                       productoRepetido = true;
@@ -563,26 +832,36 @@ export class VentasComponent implements OnInit {
                   })
         
                   if (productoRepetido) {
-                    this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + parseFloat(cantidad)
+                    this.productosVentaActual[item].cantidad = this.productosVentaActual[item].cantidad + parseFloat(cantidad);
+                    this.productosVentaActual[item].importe = this.productosVentaActual[item].importe + this.redondearImporte(this.productosVentaActual[item].precioVenta, parseFloat(cantidad));
                   } else {
                     productos[0].cantidad = parseFloat(cantidadProductoInput.value);
-                    this.productosVentaActual.push(...productos);  
+                    // this.productosVentaActual.push(...productos);  
+                    this.productosVentaActual.push(...productos.map(producto =>({
+                      ...producto,
+                      importe: this.redondearImporte(producto.precioVenta, parseFloat(cantidad))
+                    })));
                   }
                   
                 } else {
                   productos[0].cantidad = parseFloat(cantidadProductoInput.value);
-                  this.productosVentaActual.push(...productos);
+                  // this.productosVentaActual.push(...productos);
+                  this.productosVentaActual.push(...productos.map(producto => ({
+                    ...producto, 
+                    importe: this.redondearImporte(producto.precioVenta, parseFloat(cantidad))
+                  })))
                 }
 
                 // productos[0].cantidad = parseFloat(cantidadProductoInput.value);
                 // this.productosVentaActual.push(...productos);
+                return true;
               }
             },
             didClose: () => {
               const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
               inputCodigoDeProducto.focus();
               localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
-              this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+              this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual)
             }
           })
         }
@@ -594,57 +873,113 @@ export class VentasComponent implements OnInit {
         this.selectRow(productos[0].id)
       }
       localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
-      this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+      this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual)
     }).catch( e => console.log('error: ', e))
   }
 
   borrarProductoVentaActual(codigo) {
     this.productosVentaActual.forEach((item, index) => {
-      if (item.id === codigo && item.ventaId === this.idVentaActiva) this.productosVentaActual.splice(index, 1);
+      if (item.id === codigo && item.ventaId === this.idVentaActivaInterno) this.productosVentaActual.splice(index, 1);
     })
     localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
-    this.ventasService.$productosVentaActual.emit(this.productosVentaActual);
+    this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual);
   }
 
   restarCantidad(id) {
-    let item = this.productosVentaActual.findIndex(i => i.id === id && i.ventaId == this.idVentaActiva);
+    let item = this.productosVentaActual.findIndex(i => i.id === id && i.ventaId == this.idVentaActivaInterno);
 
     if(item>-1) {
-      if(this.productosVentaActual[item].seVende != 2) {  // Permitir decrementar solo cuando NO ES VENTA A GRANEL
+      if(this.productosVentaActual[item].seVende == 1) {  // Permitir decrementar solo cuando es venta por pieza
         if(this.productosVentaActual[item].cantidad <= 1) {
           this.productosVentaActual.splice(item, 1)
           this.rowSelected = '0'
         } else {
           this.productosVentaActual[item].cantidad -= 1;
+          this.productosVentaActual[item].importe = this.productosVentaActual[item].cantidad * this.productosVentaActual[item].precioVenta;
         }
         localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
-        this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+        this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual)
       }
     }
   }
 
-  agregarCantidad(id) {
+  async agregarCantidad(id) {
     console.log(id)
-    let item = this.productosVentaActual.findIndex(i => i.id === id && i.ventaId == this.idVentaActiva);
+    let item = this.productosVentaActual.findIndex(i => i.id === id && i.ventaId == this.idVentaActivaInterno);
     if(item>-1) {
-      if(this.productosVentaActual[item].seVende != 2) {  // Permitir incrementar solo cuando NO ES VENTA A GRANEL
+      if(this.productosVentaActual[item].seVende == 1) {  // Permitir incrementar solo cuando es venta por pieza
+        
+        // Validar inventario si está habilitado
+        const config = await this.configuracionService.obtenerOpcionesHabilitadas();
+        if (config && config.usarInventarios) {
+          const productoDoc = await this.productosService.obtenerProductoPorId(id);
+          
+          if (productoDoc) {
+            const inventarioActual = productoDoc.inventario || 0;
+            
+            // Calcular cuántos productos de este tipo ya están en la venta (incluyendo el que queremos agregar)
+            const cantidadEnVenta = this.productosVentaActual
+              .filter(p => p.id === id && p.ventaId === this.idVentaActivaInterno)
+              .reduce((sum, p) => sum + p.cantidad, 0);
+            
+            const cantidadTotal = cantidadEnVenta + 1; // +1 es el que queremos agregar ahora
+            
+            if (cantidadTotal > inventarioActual) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Inventario insuficiente',
+                html: `
+                  <p><strong>${productoDoc.descripcion}</strong></p>
+                  <p class="mb-1">Inventario disponible: <strong>${inventarioActual}</strong></p>
+                  <p class="mb-1">Ya en venta: <strong>${cantidadEnVenta}</strong></p>
+                  <p>No puedes agregar más unidades.</p>
+                `,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#3085d6'
+              });
+              return; // No permitir agregar
+            }
+          }
+        }
+        
+        // Si pasó la validación (o no está activo el inventario), agregar cantidad
         this.productosVentaActual[item].cantidad += 1;
+        this.productosVentaActual[item].importe = this.productosVentaActual[item].cantidad * this.productosVentaActual[item].precioVenta;
         localStorage.setItem("productosEnVentasLS", JSON.stringify(this.productosVentaActual));
-        this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+        this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual)
       }
     }    
   }
 
-  seleccionarComoVentaActiva(idTemp: number) {
-    this.ventasService.setVentaActiva(idTemp);
-    this.idVentaActiva = idTemp;
+  async seleccionarComoVentaActiva(idTemp: number, idInterno: string) {
+    
+    if(this.idVentaActiva != idTemp) {
+      this.idVentaActivaInterno = idInterno != '' ? idInterno : this.idVentaActivaInterno;
+      let sec = 0;
+      let timer = setInterval(() => {
+        this.duracionEnSegundos = this.contador(++sec%60);
+      }, 1000);
+      this.cambiandoDeVenta = true;
+      
+      this.ventasdbService.actualizarVentasActuales(await this.ventasPorStatus("0"));
 
-    // CUANDO SE CAMBIA LA PESTAÑA A OTRA VENTA, TENGO QUE SELECCIONAR MARCAR COMO SELECCIONADO EL PRIMER PRODUCTO DE LA VENTA QUE SE ABRE.
-    let prodVentaActual = this.productosVentaActual.filter(v => v.ventaId == idTemp)
-    if(prodVentaActual.length > 0) {
-      this.selectRow(prodVentaActual[0].id)
+      this.ventasdbService.setVentaActiva(idInterno);
+  
+      // CUANDO SE CAMBIA LA PESTAÑA A OTRA VENTA, TENGO QUE SELECCIONAR MARCAR COMO SELECCIONADO EL PRIMER PRODUCTO DE LA VENTA QUE SE ABRE.
+      // let prodVentaActual = this.productosVentaActual.filter(v => v.ventaId == idTemp)
+      // if(prodVentaActual.length > 0) {
+      //   this.selectRow(prodVentaActual[0].id)
+      // }
+
+      this.cambiandoDeVenta = false;
+      clearInterval(timer);
+      this.duracionEnSegundos = 0;
+      // this.ventasdbService.$productosVentaActual.emit(this.productosVentaActual)
     }
-    // this.ventasService.$productosVentaActual.emit(this.productosVentaActual)
+  }
+
+  contador(valor) {
+    return valor > 9 ? valor : '0' + valor;
   }
 
   // editarProducto(codigoDeBarras: string) {
@@ -652,23 +987,89 @@ export class VentasComponent implements OnInit {
   //   this.router.navigateByUrl('/productos/' + codigoDeBarras)
   // }
 
-  crearNuevaVenta() {
+  async crearNuevaVenta() {
+    // Si ya existe al menos una venta activa, verificar si tiene nombre
+    if (this.ventas.length > 0 && this.idVentaActivaInterno) {
+      const ventaActual = this.ventas.find(v => v.id === this.idVentaActivaInterno);
+      
+      // Solo pedir nombre si la venta actual NO tiene nombre asignado
+      if (ventaActual && (!ventaActual.nombre || ventaActual.nombre.trim() === '')) {
+        let nombreVentaInput: HTMLInputElement;
+        
+        const result = await Swal.fire({
+          title: 'Asignar nombre a la venta actual',
+          html: `<input type="text" id="nombreVenta" class="swal2-input" placeholder="Ej: Juan Pérez, Mesa 5, etc." maxlength="30">`,
+          showCancelButton: true,
+          confirmButtonText: 'Continuar',
+          cancelButtonText: 'Cancelar',
+          focusConfirm: false,
+          didOpen: () => {
+            const popup = Swal.getPopup()!;
+            nombreVentaInput = popup.querySelector('#nombreVenta') as HTMLInputElement;
+            nombreVentaInput.onkeyup = (event) => event.key === 'Enter' && Swal.clickConfirm();
+            nombreVentaInput.focus();
+          },
+          preConfirm: () => {
+            const nombre = nombreVentaInput.value.trim();
+            return nombre || null; // Retorna null si está vacío
+          },
+          didClose: () => {
+            // Devolver el foco al input de código de producto
+            const inputCodigoDeProducto = this.el.nativeElement.querySelector("#codigoDeProducto");
+            inputCodigoDeProducto.focus();
+          }
+        });
+
+        // Si el usuario canceló, no crear la nueva venta
+        if (result.isDismissed) {
+          return;
+        }
+
+        // Asignar el nombre a la venta actual y guardarlo en Firestore
+        const nombreAsignado = result.value;
+        if (nombreAsignado) {
+          ventaActual.nombre = nombreAsignado;
+          // Guardar el nombre en Firestore
+          await this.ventasdbService.actualizarNombreVenta(this.idVentaActivaInterno, nombreAsignado);
+        }
+      }
+    }
+
+    this.cargandoVentas = true;
     let nuevaVenta = {
       idTemp: this.getRandomInt(1000000, 9999999),
-      fecha: new Date(),
-      totalVenta: '0',
+      fechaVentaIniciada: Timestamp.fromDate(new Date()),
+      fechaVentaFinalizada: Timestamp.fromDate(new Date()),
+      total: '0',
       totalArticulos: '0',
-      tipoPago: 1,
+      formaDePago: 0,
       totalPagadoEfectivo: '0',
       totalPagadoCredito: '0',
       cambio: '0',
       pagoCon: '0',
-      idCajero: '0',
-      status: '1',
-      seleccionada: 1
+      idCajero: localStorage.getItem('userId') || '0',
+      nombreCajero: localStorage.getItem('nombreUsuario') || 'Desconocido',
+      status: '0',
+      seleccionada: 1,
+      idCliente: '0',
+      nombre: '' // Inicializar con nombre vacío
     }
-    this.ventasService.agregarVentaLocalstorage(nuevaVenta);
-    this.ventasService.$idVentaActiva.emit(nuevaVenta.idTemp);
+
+    await this.ventasdbService.registrarNuevaVenta(nuevaVenta).then((documentRef: DocumentReference) =>{  // Y esa nueva creada, se agrega a la base de datos
+      this.idVentaActivaInterno = documentRef.id;  // El id interno de la nueva venta se regresa y se asigna al idVentaActivaInterno
+    }) 
+
+    this.ventas.push({...nuevaVenta, id: this.idVentaActivaInterno}); // Y tambien se agrega a "ventas" para que se muestre en las pestañas de ventas
+
+    this.seleccionarComoVentaActiva(nuevaVenta.idTemp, this.idVentaActivaInterno) // Como no habia ninguna, esta nueva creada se marca como la venta activa (pestaña abierta)
+    // this.ventasdbService.$idVentaActiva.emit(nuevaVenta.idTemp);
+    this.cargandoVentas = false;
+  }
+
+  abrirVentasDelDia() {
+    if (this.modalVentasDelDia) {
+      this.modalVentasDelDia.abrir();
+    }
   }
 
   beep() {

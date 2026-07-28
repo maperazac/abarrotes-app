@@ -23,6 +23,15 @@ import { DepartamentosComponent } from './components/departamentos/departamentos
 import { SeleccionarVentaComponent } from './modals/seleccionar-venta/seleccionar-venta.component';
 import { ConfiguracionComponent } from './pages/configuracion/configuracion.component';
 import { CobrarVentaComponent } from './components/cobrar-venta/cobrar-venta.component';
+import { VentasPorPeriodoComponent } from './components/ventas-por-periodo/ventas-por-periodo.component';
+import { ProductoComunComponent } from './modals/producto-comun/producto-comun.component';
+import { EntradaDineroComponent } from './modals/entrada-dinero/entrada-dinero.component';
+import { SalidaDineroComponent } from './modals/salida-dinero/salida-dinero.component';
+import { BarraEstadoComponent } from './components/barra-estado/barra-estado.component';
+import { VentasDelDiaComponent } from './components/ventas-del-dia/ventas-del-dia.component';
+import { CorteCajaComponent } from './pages/corte-caja/corte-caja.component';
+import { InventarioComponent } from './pages/inventario/inventario.component';
+import { ClientesComponent } from './pages/clientes/clientes.component';
 
 @NgModule({
   declarations: [
@@ -41,6 +50,15 @@ import { CobrarVentaComponent } from './components/cobrar-venta/cobrar-venta.com
     SeleccionarVentaComponent,
     ConfiguracionComponent,
     CobrarVentaComponent,
+    VentasPorPeriodoComponent,
+    ProductoComunComponent,
+    EntradaDineroComponent,
+    SalidaDineroComponent,
+    BarraEstadoComponent,
+    VentasDelDiaComponent,
+    CorteCajaComponent,
+    InventarioComponent,
+    ClientesComponent,
   ],
   imports: [
     BrowserModule,

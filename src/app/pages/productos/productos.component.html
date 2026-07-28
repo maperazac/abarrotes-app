@@ -4,3 +4,4 @@
 <app-nuevo-producto *ngIf="botonSeleccionado == 2" [esModificacion] = true (botonSeleccionado)="procesarEvento($event)"></app-nuevo-producto>
 <app-buscar-productos *ngIf="botonSeleccionado == 3" [esVenta] = false></app-buscar-productos>
 <app-departamentos *ngIf="botonSeleccionado == 4"></app-departamentos>
+<app-ventas-por-periodo *ngIf="botonSeleccionado == 5"></app-ventas-por-periodo>

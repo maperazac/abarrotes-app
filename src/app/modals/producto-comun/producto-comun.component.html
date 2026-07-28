@@ -1,0 +1,44 @@
+<div style="text-align: left;">
+    <h3 class="text-center">
+        Ingresar producto común
+    </h3>
+    <form [formGroup]="formularioProducto" (keydown)="onEnterKey($event)">
+        <div>
+            Descripción del producto: <br/>
+            <input type="text" 
+                    id="descripcionProductoComun" 
+                    style="margin: 4px; padding: 10px; width: 98%; height: auto;"
+                    class="form-control"
+                    formControlName="descripcionProductoComun" 
+                    name="descripcionProductoComun"
+                    aria-describedby="basic-addon1">
+        </div> <br/>
+        <div style="display: flex">
+            <div style="width: 50%;">
+                Cantidad: <br/>
+                <input type="number" 
+                        min="0" 
+                        step="1" 
+                        formControlName="cantidadProductoComun" 
+                        id="cantidadProductoComun" 
+                        name="cantidadProductoComun" 
+                        class="form-control" 
+                        style="margin: 4px; padding: 10px; width: 95%; height: auto;">
+            </div>
+            <div style="width: 3%; display: flex; align-items: center; margin-top: 20px; margin-right: 2px;"><i class="fa fa-times"></i></div>
+            <div style="width: 50%;">
+                Precio unitario: <br/>
+                <input type="number" 
+                        id="precioProductoComun" 
+                        class="form-control" 
+                        formControlName="precioProductoComun" 
+                        name="precioProductoComun"
+                        style="margin: 4px; padding: 10px; width: 95%; height: auto;">
+            </div>
+        </div>
+    </form>
+    <div class="col-sm-12 mt-4 mb-2 text-center">
+        <button class="btn btn-primary me-2" (click) = "insertarProducto()" [disabled]=!activarBotonAceptar><i class="fa fa-check"></i> Enter - Aceptar</button>
+        <button class="btn btn-secondary" (click)="cerrarModalProductoComun()"><i class="fa fa-close"></i> ESC - Cancelar</button>
+    </div>
+</div>

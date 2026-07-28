@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Reglas para la colección de ventas
+    match /ventas/{ventaId} {
+      // Permitir lectura y escritura solo si el usuario está autenticado
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de detalleVentas
+    match /detalleVentas/{detalleId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de productos
+    match /productos/{productoId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de departamentos
+    match /departamentos/{departamentoId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de entradas de dinero
+    match /entradasDinero/{entradaId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de salidas de dinero
+    match /salidasDinero/{salidaId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de configuración
+    match /configuracion/{configId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de movimientos de inventario
+    match /movimientosInventario/{movimientoId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de clientes
+    match /clientes/{clienteId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de ventas a crédito
+    match /ventasCredito/{ventaCreditoId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reglas para la colección de abonos
+    match /abonos/{abonoId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Regla para denegar todo lo demás
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

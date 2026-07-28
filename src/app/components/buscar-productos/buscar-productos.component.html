@@ -1,54 +1,102 @@
-<div class="text-left busqueda-container-dialog animated fadeIn faster" [ngClass] = "!esVenta ? 'w-50  p-3' : ''">
-    <h4 *ngIf="esVenta">Búsqueda de productos</h4>
-    <h4 *ngIf="!esVenta">Eliminar productos</h4>
-    <input type="text" disabled value={{ProductoSeleccionado?ProductoSeleccionado.codigoDeBarras:ProductoSeleccionado}} id="inputProductoSeleccionado" style="opacity: 0;">
-    <div class="input-group mb-3">
-      <div class="input-group-prepend">
-        <span class="input-group-text" id="basic-addon1"><i class="fa fa-search"></i></span>
+<div class="busqueda-container-dialog" [ngClass]="!esVenta ? 'modo-eliminar' : 'animated fadeIn faster'">
+    <!-- Header -->
+    <div class="header-busqueda">
+      <div class="icono-header">
+        <i class="fa" [ngClass]="esVenta ? 'fa-search' : 'fa-trash'"></i>
       </div>
-      <input type="text" (keyup) = "filtrarProductosDeLaBusqueda($event)" class="form-control" id="palabraClave" name="palabraClave" #palabraClave placeholder="Teclee las primeras letras del producto" aria-label="Username" aria-describedby="basic-addon1" autocomplete="off">
+      <h3 class="titulo-header">
+        <span *ngIf="esVenta">Búsqueda de productos</span>
+        <span *ngIf="!esVenta">Eliminar productos</span>
+      </h3>
     </div>
+
+    <input type="text" disabled value={{ProductoSeleccionado?ProductoSeleccionado.codigoDeBarras:ProductoSeleccionado}} id="inputProductoSeleccionado" style="opacity: 0;">
+    
+    <!-- Barra de búsqueda -->
+    <div class="barra-busqueda-productos">
+      <div class="icono-busqueda">
+        <i class="fa fa-search"></i>
+      </div>
+      <input 
+        type="text" 
+        (keyup)="filtrarProductosDeLaBusqueda($event)" 
+        class="input-busqueda" 
+        id="palabraClave" 
+        name="palabraClave" 
+        #palabraClave 
+        placeholder="Teclee las primeras letras del producto" 
+        autocomplete="off">
+    </div>
+
+    <!-- Tabla de resultados -->
     <div class="contenedor-tabla">
-      <table class="table table-sm tabla-resultados-busqueda">
-        <thead class="thead-dark">
-          <tr *ngIf="esVenta">
-            <th scope="col" style="width:40%" class="text-center">Descripción</th>
-            <th scope="col" style="width:20%" class="text-center">Precio venta</th>
-            <th scope="col" style="width:20%" class="text-center">Departamento</th>
-            <th scope="col" style="width:20%" class="text-center">Acciones</th>
+      <table class="tabla-resultados-busqueda">
+        <thead>
+          <!-- Header para modo venta -->
+          <tr *ngIf="esVenta && !mostrarInventario">
+            <th style="width:40%">Descripción</th>
+            <th style="width:20%">Precio venta</th>
+            <th style="width:20%">Departamento</th>
+            <th style="width:20%">Acciones</th>
           </tr>
-          <tr *ngIf="!esVenta">
-            <th scope="col" style="width:15%" class="text-center">Código</th>
-            <th scope="col" style="width:30%" class="text-center">Descripción</th>
-            <th scope="col" style="width:15%" class="text-center">Precio venta</th>
-            <th scope="col" style="width:20%" class="text-center">Departamento</th>
-            <th scope="col" style="width:20%" class="text-center">Acciones</th>
+          <tr *ngIf="esVenta && mostrarInventario">
+            <th style="width:35%">Descripción</th>
+            <th style="width:15%">Precio venta</th>
+            <th style="width:15%">Inventario</th>
+            <th style="width:15%">Departamento</th>
+            <th style="width:20%">Acciones</th>
+          </tr>
+          
+          <!-- Header para modo eliminar -->
+          <tr *ngIf="!esVenta && !mostrarInventario">
+            <th style="width:15%">Código</th>
+            <th style="width:30%">Descripción</th>
+            <th style="width:15%">Precio venta</th>
+            <th style="width:20%">Departamento</th>
+            <th style="width:20%">Acciones</th>
+          </tr>
+          <tr *ngIf="!esVenta && mostrarInventario">
+            <th style="width:13%">Código</th>
+            <th style="width:27%">Descripción</th>
+            <th style="width:13%">Precio venta</th>
+            <th style="width:12%">Inventario</th>
+            <th style="width:15%">Departamento</th>
+            <th style="width:20%">Acciones</th>
           </tr>
         </thead>
         <tbody *ngIf="productosTemp.length > 0; else sinResultados">
-          <tr *ngFor="let producto of productosTemp; let i = index" (click)="setProductoSeleccionado(producto)" [ngClass]="ProductoSeleccionado ? (ProductoSeleccionado.id == producto.id ? 'row-selected' : '') : ''">
-            <td *ngIf="!esVenta">{{ producto.codigoDeBarras }}</td>
-            <td>{{ producto.descripcion }}</td>
-            <td class="text-center">{{ producto.precioVenta | currency: '$' }}</td>
-            <td class="text-center">{{ producto.departamentoNombre }}</td>
-            <td class="text-center align-middle">
-              <button class="btn btn-sm btn-primary btn-outline-light mr-3" (click)="editarProducto()">
+          <tr 
+            *ngFor="let producto of productosTemp; let i = index" 
+            (click)="setProductoSeleccionado(producto)" 
+            [ngClass]="ProductoSeleccionado ? (ProductoSeleccionado.id == producto.id ? 'row-selected' : '') : ''"
+            class="fila-producto">
+            <td *ngIf="!esVenta" class="col-codigo">{{ producto.codigoDeBarras }}</td>
+            <td class="col-descripcion">{{ producto.descripcion }}</td>
+            <td class="col-precio">{{ producto.precioVenta | currency: '$' }}</td>
+            <td *ngIf="mostrarInventario" class="col-inventario">
+              <span class="badge-inventario" [class.bajo]="(producto.inventario || 0) < 10">
+                {{ producto.inventario || 0 }}
+              </span>
+            </td>
+            <td class="col-departamento">{{ producto.departamentoNombre }}</td>
+            <td class="col-acciones">
+              <button class="btn-accion btn-editar" (click)="setProductoSeleccionado(producto); editarProducto(); $event.stopPropagation()">
                 <i class="fa fa-edit"></i>
               </button>
-              <button class="btn btn-sm btn-danger btn-outline-light" (click)="openModalConfirmarBorrar()">
+              <button class="btn-accion btn-borrar" (click)="openModalConfirmarBorrar(producto); $event.stopPropagation()">
                 <i class="fa fa-trash"></i>
               </button>
             </td>
           </tr>
         </tbody>
         <ng-template #sinResultados>
-          <!-- <div class="template-sin-resultados">
-            No hay resultados
-          </div> -->
           <tbody>
             <tr>
-              <td colspan="4" class="text-center pt-5">
-                <i>No hay resultados</i>
+              <td [attr.colspan]="esVenta ? (mostrarInventario ? 5 : 4) : (mostrarInventario ? 6 : 5)" class="sin-resultados">
+                <div class="mensaje-sin-resultados">
+                  <i class="fa fa-inbox"></i>
+                  <span>No hay resultados</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -56,14 +104,15 @@
       </table>
     </div>
 
-    
-
-    <div class="d-flex justify-content-between" *ngIf="esVenta">
-      <button class="col-sm-5 btn btn-primary" (click) = "agregarProductoALaVenta()" [disabled]=!activarBotonAceptar>
-        <i class="fa fa-check"></i> Aceptar
+    <!-- Botones de acción -->
+    <div class="botones-footer" *ngIf="esVenta">
+      <button class="btn-footer-busqueda btn-aceptar" (click)="agregarProductoALaVenta()" [disabled]="!activarBotonAceptar">
+        <i class="fa fa-check"></i>
+        <span>Aceptar</span>
       </button>
-      <button (click)="cerrarBusqueda()" class="col-sm-5 btn btn-secondary">
-        <i class="fa fa-times"></i> Cancelar
+      <button class="btn-footer-busqueda btn-cancelar" (click)="cerrarBusqueda()">
+        <i class="fa fa-times"></i>
+        <span>Cancelar</span>
       </button>
     </div>
   </div>
@@ -71,27 +120,25 @@
 <!-- Modal eliminar -->
 <!-- <button type="button" class="btn btn-info btn-lg" (click)="openModalConfirmarBorrar()">Prueba boton borrar</button> -->
 
-<div class="modal" role="dialog"  [ngStyle]="{'display':display}">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <!-- <div class="modal-header">
-        <h4 class="modal-title">Model Title</h4>
-        <button type="button" class="close" aria-label="Close" (click)="onCloseHandled()"><span aria-hidden="true">&times;</span></button>
-      </div> -->
-      <div class="modal-body">
-        <h1 class="text-warning">
-          <i class="fa fa-question-circle-o"></i>
-        </h1>
-        <div>
-          <h3>¿Desea eliminar este producto?</h3>
-        </div>
-        <div>
-          <p>Se eliminarán permanentemente todos los registros e inventarios asociados a este producto</p>
-        </div>
+<!-- Modal eliminar -->
+<div class="modal-overlay" [class.modal-visible]="display === 'block'" role="dialog">
+  <div class="modal-dialog-custom">
+    <div class="modal-content-custom">
+      <div class="modal-icono">
+        <i class="fa fa-exclamation-triangle"></i>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" (click)="onCloseHandledConfirmarBorrar()" >Si</button>
-        <button type="button" class="btn btn-default" (click)="onCancelBorrar()" >No</button>
+      <h3 class="modal-titulo">¿Desea eliminar este producto?</h3>
+      <p class="modal-mensaje">Se eliminarán permanentemente todos los registros e inventarios asociados a este producto</p>
+      
+      <div class="modal-botones">
+        <button type="button" class="btn-modal btn-confirmar" (click)="onCloseHandledConfirmarBorrar()">
+          <i class="fa fa-check"></i>
+          <span>Sí, eliminar</span>
+        </button>
+        <button type="button" class="btn-modal btn-cancelar-modal" (click)="onCancelBorrar()">
+          <i class="fa fa-times"></i>
+          <span>Cancelar</span>
+        </button>
       </div>
     </div>
   </div>

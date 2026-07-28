@@ -1,0 +1,130 @@
+<div class="entrada-dinero-container">
+  <!-- Header -->
+  <div class="header-modal">
+    <div class="icono-header">
+      <i class="fa fa-arrow-circle-down"></i>
+    </div>
+    <h3 class="titulo-header">Entrada de Dinero</h3>
+  </div>
+  
+  <form [formGroup]="formularioEntrada" class="form-modal">
+    <div class="campo-formulario">
+      <label for="cantidad" class="label-campo">
+        <i class="fa fa-dollar"></i>
+        Cantidad
+      </label>
+      <input 
+        type="number" 
+        class="input-campo" 
+        id="cantidad" 
+        formControlName="cantidad"
+        placeholder="0.00"
+        step="0.01"
+        min="0.01"
+        autofocus>
+    </div>
+
+    <div class="campo-formulario">
+      <label for="detalle" class="label-campo">
+        <i class="fa fa-pencil"></i>
+        Detalles
+      </label>
+      <textarea 
+        class="textarea-campo" 
+        id="detalle" 
+        formControlName="detalle"
+        rows="3"
+        maxlength="200"
+        placeholder="Describe el motivo de la entrada de dinero"></textarea>
+      <small class="contador-caracteres">{{formularioEntrada.get('detalle')?.value?.length || 0}}/200 caracteres</small>
+    </div>
+
+    <div class="botones-accion">
+      <button 
+        type="button" 
+        class="btn-modal-accion btn-guardar" 
+        (click)="guardarEntrada()"
+        [disabled]="formularioEntrada.invalid || guardando">
+        <span class="tecla-modal">F2</span>
+        <i *ngIf="guardando" class="fa fa-spinner fa-pulse"></i>
+        <i *ngIf="!guardando" class="fa fa-save"></i>
+        <span>Guardar</span>
+      </button>
+      <button 
+        type="button" 
+        class="btn-modal-accion btn-cancelar-accion" 
+        (click)="cerrarModal()"
+        [disabled]="guardando">
+        <span class="tecla-modal">ESC</span>
+        <i class="fa fa-times"></i>
+        <span>Cancelar</span>
+      </button>
+    </div>
+  </form>
+
+  <div class="separador"></div>
+
+  <div class="entradas-pasadas-section">
+    <button 
+      type="button" 
+      class="btn-toggle-lista" 
+      (click)="toggleMostrarEntradas()">
+      <i class="fa" [ngClass]="mostrarEntradas ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+      <span>{{ mostrarEntradas ? 'Ocultar entradas' : 'Ver entradas pasadas' }}</span>
+      <span class="badge-contador">{{ entradasPasadas.length }}</span>
+    </button>
+
+    <div *ngIf="mostrarEntradas" class="lista-registros animated fadeIn">
+      <div *ngIf="entradasPasadas.length === 0" class="mensaje-vacio">
+        <i class="fa fa-inbox"></i>
+        <span>No hay entradas registradas hoy</span>
+      </div>
+
+      <div *ngIf="entradasPasadas.length > 0">
+        <div 
+          *ngFor="let entrada of entradasPasadas; let i = index" 
+          class="item-registro item-entrada"
+          [ngClass]="{'selected': entrada.id === entradaSeleccionada}"
+          (click)="seleccionarEntrada(entrada.id!)">
+          
+          <input 
+            type="radio" 
+            [id]="entrada.id" 
+            [value]="entrada.id" 
+            name="entradaRadio"
+            [checked]="entrada.id === entradaSeleccionada"
+            class="radio-hidden">
+          
+          <label [for]="entrada.id" class="label-registro">
+            <div class="info-registro">
+              <div class="cantidad-registro">
+                <i class="fa fa-arrow-down"></i>
+                <strong>${{ entrada.cantidad.toFixed(2) }}</strong>
+              </div>
+              <div class="detalle-registro">
+                {{ entrada.detalle }}
+              </div>
+              <div class="fecha-registro">
+                <i class="fa fa-clock-o"></i> 
+                {{ entrada.fecha.toDate() | date:'short' }}
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div class="btn-eliminar-container">
+          <button 
+            type="button" 
+            class="btn-eliminar-registro" 
+            (click)="confirmarEliminarEntrada()"
+            [disabled]="!entradaSeleccionada || eliminando">
+            <span class="tecla-modal">DEL</span>
+            <i *ngIf="eliminando" class="fa fa-spinner fa-pulse"></i>
+            <i *ngIf="!eliminando" class="fa fa-trash"></i>
+            <span>Cancelar entrada seleccionada</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

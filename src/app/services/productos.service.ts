@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, collectionData, deleteDoc, doc, getDocs, where, limit, orderBy, query, updateDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, collectionData, deleteDoc, doc, getDocs, where, limit, orderBy, query, updateDoc, getDoc } from '@angular/fire/firestore';
 import { ProductoModel } from '../models/producto.model';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -45,7 +45,8 @@ export class ProductosService {
       ganancia: producto.ganancia,
       precioVenta: producto.precioVenta,
       precioMayoreo: producto.precioMayoreo,
-      departamento: producto.departamento
+      departamento: producto.departamento,
+      inventario: producto.inventario || 0
     });
   }
 
@@ -66,5 +67,36 @@ export class ProductosService {
     productos.forEach((producto) => {
       this.modificarProducto(producto, producto.id)
     })
+  }
+
+  /**
+   * Obtiene un producto por su ID
+   */
+  async obtenerProductoPorId(id: string): Promise<ProductoInterface | null> {
+    try {
+      const productoDocRef = doc(this.firestore, `productos/${id}`);
+      const productoDoc = await getDoc(productoDocRef);
+      
+      if (productoDoc.exists()) {
+        return {
+          id: productoDoc.id,
+          ...productoDoc.data()
+        } as ProductoInterface;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error al obtener producto por ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Actualiza solo el campo inventario de un producto
+   */
+  async actualizarInventario(id: string, nuevoInventario: number): Promise<void> {
+    const productoDocRef = doc(this.firestore, `productos/${id}`);
+    return updateDoc(productoDocRef, {
+      inventario: nuevoInventario
+    });
   }
 }

@@ -1,10 +1,72 @@
-<div class="d-flex animated fadeIn faster bg-light p-3">
-    <button disabled [ngClass]="botonSeleccionado == 1 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(1)"><i class="fa fa-plus-square" aria-hidden="true"></i> INS Varios</button>
-    <button [disabled]="idVentaActiva == 0" tabindex="-1" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(2)"><span class="functionKeys">Ctrl</span><span class="functionKeys">P</span><i class="fa fa-edit" aria-hidden="true"></i> Producto común</button>
-    <button [disabled]="idVentaActiva == 0" tabindex="-1" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(3)"><span class="functionKeys">F10</span><i class="fa fa-search" aria-hidden="true"></i> Buscar</button>
-    <button disabled [ngClass]="botonSeleccionado == 4 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(4)"><i class="fa fa-cubes" aria-hidden="true"></i> Mayoreo</button>
-    <button disabled [ngClass]="botonSeleccionado == 5 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(5)"><i class="fa fa-arrow-circle-down" aria-hidden="true"></i> Entradas</button>
-    <button disabled [ngClass]="botonSeleccionado == 6 ? 'btn-primary' : 'btn-outline-secondary'" class="btn py-2 px-3 mr-3" (click)="emitirEvento(6)"><i class="fa fa-arrow-circle-up" aria-hidden="true"></i> Salidas</button>
-    <button [disabled]="idVentaActiva == 0" tabindex="-1" class="btn btn-outline-secondary py-2 px-3 mr-3" (click)="emitirEvento(7)"><span class="functionKeys">DEL</span><i class="fa fa-trash" aria-hidden="true"></i> Borrar artículo</button>
+<div class="ventas-navbar-container">
+  <div class="botones-grupo">
+    <button 
+      disabled 
+      class="btn-accion btn-disabled" 
+      [ngClass]="{'btn-activo': botonSeleccionado == 1}" 
+      (click)="emitirEvento(1)">
+      <i class="fa fa-plus-square icono" aria-hidden="true"></i>
+      <span class="texto">INS Varios</span>
+    </button>
+
+    <button 
+      [disabled]="idVentaActiva == 0" 
+      tabindex="-1" 
+      class="btn-accion" 
+      (click)="emitirEvento(2)">
+      <div class="teclas">
+        <span class="functionKeys">Ctrl</span>
+        <span class="functionKeys">P</span>
+      </div>
+      <i class="fa fa-edit icono" aria-hidden="true"></i>
+      <span class="texto">Producto común</span>
+    </button>
+
+    <button 
+      [disabled]="idVentaActiva == 0" 
+      tabindex="-1" 
+      class="btn-accion" 
+      (click)="emitirEvento(3)">
+      <span class="functionKeys">F10</span>
+      <i class="fa fa-search icono" aria-hidden="true"></i>
+      <span class="texto">Buscar</span>
+    </button>
+
+    <button 
+      disabled 
+      class="btn-accion btn-disabled" 
+      [ngClass]="{'btn-activo': botonSeleccionado == 4}" 
+      (click)="emitirEvento(4)">
+      <i class="fa fa-cubes icono" aria-hidden="true"></i>
+      <span class="texto">Mayoreo</span>
+    </button>
+
+    <button 
+      tabindex="-1" 
+      class="btn-accion btn-entrada" 
+      (click)="emitirEvento(5)">
+      <span class="functionKeys">F7</span>
+      <i class="fa fa-arrow-circle-down icono" aria-hidden="true"></i>
+      <span class="texto">Entradas</span>
+    </button>
+
+    <button 
+      tabindex="-1" 
+      class="btn-accion btn-salida" 
+      (click)="emitirEvento(6)">
+      <span class="functionKeys">F8</span>
+      <i class="fa fa-arrow-circle-up icono" aria-hidden="true"></i>
+      <span class="texto">Salidas</span>
+    </button>
+
+    <button 
+      [disabled]="idVentaActiva == 0" 
+      tabindex="-1" 
+      class="btn-accion btn-eliminar" 
+      (click)="emitirEvento(7)">
+      <span class="functionKeys">DEL</span>
+      <i class="fa fa-trash icono" aria-hidden="true"></i>
+      <span class="texto">Borrar artículo</span>
+    </button>
   </div>
-  <hr>
+</div>

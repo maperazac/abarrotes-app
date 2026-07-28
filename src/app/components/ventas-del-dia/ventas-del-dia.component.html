@@ -1,0 +1,289 @@
+<div #modalVentasDelDia class="modal-overlay">
+  <div class="modal-container">
+    <!-- Header -->
+    <div class="modal-header">
+      <h2 class="modal-title">
+        <i class="fa fa-calendar-check-o" aria-hidden="true"></i>
+        Ventas del Día y Devoluciones
+      </h2>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="modal-body">
+      <!-- Sección Izquierda: Lista de Ventas -->
+      <div class="seccion-izquierda">
+        <!-- Búsqueda -->
+        <div class="filtro-busqueda">
+          <div class="input-group">
+            <span class="input-icon">
+              <i class="fa fa-search"></i>
+            </span>
+            <input 
+              #inputBuscar
+              type="text" 
+              class="form-control" 
+              placeholder="Buscar por nombre o folio del ticket"
+              [(ngModel)]="textoBusqueda"
+              (input)="onBusquedaChange()">
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-container">
+          <div class="filtro-fecha">
+            <label for="fecha">Del día:</label>
+            <div class="fecha-group">
+              <input 
+                #inputFecha
+                type="date" 
+                id="fecha" 
+                class="form-control"
+                [(ngModel)]="fechaSeleccionada"
+                (change)="onFechaChange()">
+              <button class="btn-hoy" (click)="seleccionarHoy()" title="Hoy">
+                <i class="fa fa-calendar" aria-hidden="true"></i>
+                Hoy
+              </button>
+            </div>
+          </div>
+
+          <div class="filtro-item">
+            <label for="cajero">Cajero:</label>
+            <select id="cajero" class="form-control" [(ngModel)]="cajeroSeleccionado" disabled>
+              <option value="">Todos los cajeros</option>
+            </select>
+          </div>
+
+          <div class="filtro-item">
+            <label for="caja">Caja:</label>
+            <select id="caja" class="form-control" [(ngModel)]="cajaSeleccionada" disabled>
+              <option value="">Todas las cajas</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lista de Ventas -->
+        <div class="lista-ventas">
+          <div class="ventas-header">
+            <span class="ventas-count">{{ ventasFiltradas.length }} venta(s) encontrada(s)</span>
+          </div>
+          
+          <div class="ventas-scroll">
+            <div 
+              *ngFor="let venta of ventasFiltradas; let i = index"
+              class="venta-item venta-item-{{i}}"
+              [class.selected]="indiceSeleccionado === i"
+              [class.cancelada]="venta.status === '2'"
+              (click)="seleccionarVenta(i)">
+              
+              <div class="venta-info">
+                <div class="venta-nombre">
+                  {{ venta.nombre || 'Sin nombre' }}
+                  <span *ngIf="venta.status === '2'" class="badge-cancelada-lista">Cancelada</span>
+                  <span *ngIf="venta.formaDePago === 2" class="badge-credito-lista">Crédito</span>
+                </div>
+                <div class="venta-folio">
+                  Folio: {{ venta.idTemp }}
+                </div>
+                <div class="venta-fecha">
+                  {{ formatearFecha(venta.fechaVentaFinalizada) }}
+                </div>
+              </div>
+              
+              <div class="venta-total">
+                {{ formatearMoneda(venta.total) }}
+              </div>
+            </div>
+
+            <div *ngIf="ventasFiltradas.length === 0" class="sin-resultados">
+              <i class="fa fa-inbox" aria-hidden="true"></i>
+              <p>No se encontraron ventas</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Derecha: Detalle de Venta -->
+      <div class="seccion-derecha">
+        <div *ngIf="ventaSeleccionada" class="detalle-venta" [class.venta-cancelada]="ventaSeleccionada.status === '2'">
+          <!-- Sello de Cancelada -->
+          <div *ngIf="ventaSeleccionada.status === '2'" class="sello-cancelada">
+            <span>CANCELADA</span>
+          </div>
+          
+          <!-- Información General -->
+          <div class="info-general">
+            <div class="nombre-y-datos">
+              <h3 class="nombre-venta" *ngIf="ventaSeleccionada.nombre">
+                {{ ventaSeleccionada.nombre }}
+              </h3>
+              
+              <div class="info-compacta">
+                <span class="dato-item">
+                  <strong>Folio:</strong> {{ ventaSeleccionada.idTemp }}
+                </span>
+                <span class="separador">•</span>
+                <span class="dato-item">
+                  <strong>Forma de pago:</strong> 
+                  <span [class.badge-credito]="ventaSeleccionada.formaDePago === 2">
+                    {{ ventaSeleccionada.formaDePago === 1 ? 'Efectivo' : ventaSeleccionada.formaDePago === 2 ? 'Crédito' : 'Mixto' }}
+                  </span>
+                </span>
+                <span class="separador">•</span>
+                <span class="dato-item">
+                  <strong>Cajero:</strong> {{ ventaSeleccionada.nombreCajero || ventaSeleccionada.idCajero || 'N/A' }}
+                </span>
+                <span class="separador">•</span>
+                <span class="dato-item">
+                  <strong>Cliente:</strong> {{ ventaSeleccionada.nombreCliente || 'Público general' }}
+                </span>
+                <span class="separador">•</span>
+                <span class="dato-item">
+                  <strong>Fecha:</strong> {{ formatearFecha(ventaSeleccionada.fechaVentaFinalizada) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de Artículos -->
+          <div class="articulos-container">
+            <h4 class="articulos-titulo">Artículos de la venta</h4>
+            
+            <div class="articulos-tabla">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cant.</th>
+                    <th>Descripción</th>
+                    <th>Importe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    *ngFor="let articulo of ventaSeleccionada.detalleProductos; let i = index"
+                    class="articulo-row"
+                    [class.selected]="articuloSeleccionado === i"
+                    (click)="seleccionarArticulo(i)">
+                    <td>{{ articulo.cantidad }}</td>
+                    <td>{{ articulo.descripcion }}</td>
+                    <td>{{ formatearMoneda(articulo.importe) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div *ngIf="!ventaSeleccionada.detalleProductos || ventaSeleccionada.detalleProductos.length === 0" class="sin-articulos">
+                <p>No hay artículos en esta venta</p>
+              </div>
+            </div>
+
+            <!-- Botón Devolver Artículo -->
+            <div class="boton-devolver">
+              <button 
+                class="btn btn-warning"
+                [disabled]="articuloSeleccionado === -1 || ventaSeleccionada.status === '2'"
+                (click)="devolverArticulo()">
+                <i class="fa fa-undo" aria-hidden="true"></i>
+                Devolver artículo seleccionado
+              </button>
+            </div>
+          </div>
+
+          <!-- Resumen de la Venta -->
+          <div class="resumen-venta">
+            <!-- Mostrar desglose si hay devoluciones -->
+            <div *ngIf="ventaSeleccionada.totalDevoluciones && parseFloat(ventaSeleccionada.totalDevoluciones) > 0" 
+                 class="desglose-devoluciones">
+              <div class="desglose-item">
+                <span class="desglose-label">Total original:</span>
+                <span class="desglose-value">{{ formatearMoneda(ventaSeleccionada.totalOriginal || ventaSeleccionada.total) }}</span>
+              </div>
+              <div class="desglose-item devolucion">
+                <span class="desglose-label">Devoluciones:</span>
+                <span class="desglose-value">-{{ formatearMoneda(ventaSeleccionada.totalDevoluciones) }}</span>
+              </div>
+              <div class="desglose-separador"></div>
+            </div>
+
+            <div class="resumen-fila">
+              <div class="resumen-item">
+                <span class="resumen-label">Total {{ ventaSeleccionada.totalDevoluciones && parseFloat(ventaSeleccionada.totalDevoluciones) > 0 ? 'actual' : '' }}:</span>
+                <span class="resumen-value total-value">{{ formatearMoneda(ventaSeleccionada.total) }}</span>
+              </div>
+              
+              <!-- Venta en Efectivo -->
+              <ng-container *ngIf="ventaSeleccionada.formaDePago === 1">
+                <div class="resumen-item">
+                  <span class="resumen-label">Pagó con:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.pagoCon) }}</span>
+                </div>
+                
+                <div class="resumen-item">
+                  <span class="resumen-label">Cambio:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.cambio) }}</span>
+                </div>
+              </ng-container>
+              
+              <!-- Venta a Crédito -->
+              <ng-container *ngIf="ventaSeleccionada.formaDePago === 2">
+                <div class="resumen-item">
+                  <span class="resumen-label">Forma de pago:</span>
+                  <span class="resumen-value credito-badge">CRÉDITO (FIADO)</span>
+                </div>
+                
+                <div class="resumen-item">
+                  <span class="resumen-label">Total {{ ventaSeleccionada.totalDevoluciones && parseFloat(ventaSeleccionada.totalDevoluciones) > 0 ? 'actual' : '' }} a crédito:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.total) }}</span>
+                </div>
+              </ng-container>
+              
+              <!-- Venta Mixta -->
+              <ng-container *ngIf="ventaSeleccionada.formaDePago === 3">
+                <div class="resumen-item">
+                  <span class="resumen-label">Pagado en efectivo:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.totalPagadoEfectivo) }}</span>
+                </div>
+                
+                <div class="resumen-item">
+                  <span class="resumen-label">Pagado a crédito:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.totalPagadoCredito) }}</span>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Botones de Acción -->
+          <div class="botones-accion">
+            <button 
+              class="btn btn-danger" 
+              [disabled]="ventaSeleccionada.status === '2'"
+              (click)="cancelarVenta()">
+              <i class="fa fa-times" aria-hidden="true"></i>
+              Cancelar venta
+            </button>
+            
+            <button 
+              class="btn btn-primary" 
+              [disabled]="ventaSeleccionada.status === '2'"
+              (click)="reimprimirTicket()">
+              <i class="fa fa-print" aria-hidden="true"></i>
+              Reimprimir ticket
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="!ventaSeleccionada" class="sin-seleccion">
+          <i class="fa fa-hand-pointer-o" aria-hidden="true"></i>
+          <p>Selecciona una venta para ver los detalles</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="cerrar()">
+        <i class="fa fa-times" aria-hidden="true"></i>
+        Cerrar <span class="tecla-info">(ESC)</span>
+      </button>
+    </div>
+  </div>
+</div>

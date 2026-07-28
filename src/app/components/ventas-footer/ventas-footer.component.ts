@@ -1,7 +1,7 @@
-import { Component, ElementRef, Input, OnInit, ViewChild, HostListener } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild, HostListener, Output, EventEmitter } from '@angular/core';
 import ProductoInterface from 'src/app/interfaces/productos.interface';
 import VentaInterface from 'src/app/interfaces/ventas.interface';
-import { VentasService } from 'src/app/services/ventas.service';
+import { VentasdbService } from 'src/app/services/ventasdb.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -16,16 +16,16 @@ export class VentasFooterComponent implements OnInit {
   handleKeyDown(event: KeyboardEvent) {
     if((event.code == 'F5')) {  // F5 para abrir el modal para moverse entre las ventas actuales
       event.preventDefault();
-      if(this.ventasActuales.length > 1) {
+      if(this.ventasActuales.length > 1 && !this.cambiandoDeVenta && !this.eliminandoVenta) {
         this.mostrarListaVentas(); 
       }
     }
     if((event.code == 'F12')) {  // F12 para abrir modal para cobrar la venta.
       event.preventDefault();
-      this.cobrarVenta(); 
+      if(!this.cambiandoDeVenta && !this.eliminandoVenta) this.cobrarVenta(); 
     }
 
-    if((event.code == 'F1')) {  // F12 para abrir modal para cobrar la venta.
+    if((event.code == 'F1')) {  // Desactivar el F1 para que no se abra la ayuda
       event.preventDefault();
     }
   }
@@ -35,69 +35,66 @@ export class VentasFooterComponent implements OnInit {
   productosVentaActual: ProductoInterface[];
   cantidadArticulos = 0;
   ventaTotalPesos = 0;
-  idVentaActiva;
-  ventasActuales;
+  idVentaActiva; // Este es el idTemp que es el numero de venta que se muestra en las pestañas de ventas
+  idVentaActivaInterno; // Es el id interno de la venta activa, el que registra firestore automaticamente. Se usa para guardar los productos de la venta en detalleVentas
+  ventasActuales: VentaInterface[] = [];
   inputVentaActualModal: HTMLInputElement;
+  inputVentaActualModalInterno: HTMLInputElement;
   pagoConInput: HTMLInputElement;
+  eliminandoVenta = false;
+  
+  @Input() cambiandoDeVenta;
 
-  constructor(private ventasService: VentasService,
+  @Output() nuevaVenta = new EventEmitter();
+  @Output() obtenerVentasActivas = new EventEmitter();
+  
+
+  constructor(private ventasdbService: VentasdbService,
               private el: ElementRef
   ) { 
   }
 
   ngOnInit() {
-    this.ventasService.$productosVentaActual.subscribe((valor) => {
-      this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage();
-      this.productosVentaActual = valor.filter(p => p.ventaId == this.idVentaActiva);
+    this.ventasdbService.$productosVentaActual.subscribe((valor) => {
+      // this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage();
+      this.productosVentaActual = valor.filter(p => p.ventaId == this.idVentaActivaInterno);
 
       this.cantidadArticulos = 0;
       this.ventaTotalPesos = 0;
       this.productosVentaActual.map(item => {
         this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
-        this.ventaTotalPesos += item.cantidad * item.precioVenta;
+        this.ventaTotalPesos += item.importe;
       })
     })
 
-    this.ventasService.$idVentaActiva.subscribe((id) => {
+    this.ventasdbService.$idVentaActiva.subscribe((id) => {
       this.idVentaActiva = id;
+    })  
+
+    this.ventasdbService.$idVentaActivaInterno.subscribe((idInterno) => {
+      this.idVentaActivaInterno = idInterno;
       const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
-      this.productosVentaActual = productosEnVentasActuales.filter(v => v.ventaId == id);
+      this.productosVentaActual = productosEnVentasActuales.filter(v => v.ventaId == idInterno);
       
       this.cantidadArticulos = 0;
       this.ventaTotalPesos = 0;
       this.productosVentaActual.map(item => {
         this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
-        this.ventaTotalPesos += item.cantidad * item.precioVenta;
+        this.ventaTotalPesos += item.importe;
       })
-    })  
+    }) 
 
-    this.ventasService.$ventasActuales.subscribe(ventas => {
+    this.ventasdbService.$ventasActuales.subscribe(ventas => {
       this.ventasActuales = ventas;
     })
 
-    this.ventasActuales = this.ventasService.obtenerTodasLasVentasActuales();
+    // this.ventasActuales = this.ventasService.obtenerTodasLasVentasActuales();
     
-    this.cargarTotalesIniciales()
+    // this.cargarTotalesIniciales()
   }
 
   crearNuevaVenta() {
-    let nuevaVenta = {
-      idTemp: this.getRandomInt(1000000, 9999999),
-      fecha: new Date(),
-      totalVenta: '0',
-      totalArticulos: '0',
-      tipoPago: 1,
-      totalPagadoEfectivo: '0',
-      totalPagadoCredito: '0',
-      cambio: '0',
-      pagoCon: '0',
-      idCajero: '0',
-      status: '1',
-      seleccionada: 1
-    }
-
-    this.ventasService.agregarVentaLocalstorage(nuevaVenta);
-    this.ventasService.$idVentaActiva.emit(nuevaVenta.idTemp);
+    this.nuevaVenta.emit();
   }
 
   getRandomInt(min, max) {
@@ -107,59 +104,41 @@ export class VentasFooterComponent implements OnInit {
   }
 
   async eliminarVentaActiva() {
-    const ventasActuales = JSON.parse(localStorage.getItem("ventasLS")); // Obtiene el array con todas las ventas actuales en pantalla
+
+    this.eliminandoVenta = true;
+    // const ventasActuales = JSON.parse(localStorage.getItem("ventasLS")); // Obtiene el array con todas las ventas actuales en pantalla
     
-    this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage(); // Recorre el array de ventas y obtiene la que tenga la propiedad "seleccionada" = 1
+    // this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage(); // Recorre el array de ventas y obtiene la que tenga la propiedad "seleccionada" = 1
 
-    let item = ventasActuales.findIndex(i => i.idTemp === this.idVentaActiva) // Obtiene la posicion en el array de la venta que se va a eliminar.
+    let item = this.ventasActuales.find(i => i.id === this.idVentaActivaInterno) // Obtiene la venta que se va a eliminar.
 
-    await this.ventasService.eliminarVentaLocalStorage(this.idVentaActiva);  // Elimina la venta del localstorage
+    // this.ventasService.eliminarVentaLocalStorage(this.idVentaActiva);  // Elimina la venta del localstorage
+    await this.ventasdbService.eliminarVentaEnCurso(item);
 
     // Aqui recorrer el array de productos en la venta actual y eliminar todos los productos ligados a esta venta que se acaba de eliminar
     const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
-    let productosActualizados = productosEnVentasActuales.filter(prod => prod.ventaId != this.idVentaActiva);
+    let productosActualizados = productosEnVentasActuales.filter(prod => prod.ventaId != this.idVentaActivaInterno);
     localStorage.setItem("productosEnVentasLS", JSON.stringify(productosActualizados));
-    this.ventasService.$productosVentaActual.emit(productosActualizados);
+    this.ventasdbService.$productosVentaActual.emit(productosActualizados);
 
-    if(item == 0 && ventasActuales.length != 1) { // Si el index que se quiere borrar es el 0 (o sea la primera pestaña) pero no es el unico, la venta activa pasa a el elemento de enseguida, no el anterior, como seria si se quiere eliminar una pestaña que no es la primera
-      // this.ventasService.$idVentaActiva.emit(ventasActuales[item + 1].idTemp)
-      // this.idVentaActiva = ventasActuales[item + 1].idTemp;
-      // ventasActuales[item + 1].seleccionada = 1;
-      ventasActuales.forEach((venta, index) => {
-        if(index == item + 1) {
-          venta.seleccionada = 1;
-          this.ventasService.$idVentaActiva.emit(venta.idTemp)
-          this.idVentaActiva = venta.idTemp;
-          this.ventasService.setVentaActiva(venta.idTemp);
-        }
-      })
-    } else if (ventasActuales.length == 1) { // Significa que era la unica venta en pantalla (la unica pestaña) por lo tanto al borrarla, idVentaActiva se pone en 0
-      this.ventasService.$idVentaActiva.emit(0)
-      this.idVentaActiva = 0;
+    // this.ventasdbService.actualizarVentasActuales(this.ventasActuales.filter(i => i.idTemp !== this.idVentaActiva));
+    this.obtenerVentasActivas.emit();
 
-    } else { // Si no, quiere decir que habia mas de una, entonces se elimina la activa y se pone como activa la venta que esta una posicion antes en el array
-      ventasActuales.forEach((venta, index) => {
-        if(index == item - 1) {
-          venta.seleccionada = 1;
-          this.ventasService.$idVentaActiva.emit(venta.idTemp)
-          this.idVentaActiva = venta.idTemp;
-        }
-      })
-    }
+    this.eliminandoVenta = false;
   }
 
-  cargarTotalesIniciales() {
-    this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage();
-      const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
-      this.productosVentaActual = productosEnVentasActuales.filter(v => v.ventaId == this.idVentaActiva);
+  // cargarTotalesIniciales() {
+  //   this.idVentaActiva = this.ventasService.obtenerVentaActivaLocalStorage();
+  //     const productosEnVentasActuales: ProductoInterface[] = JSON.parse(localStorage.getItem("productosEnVentasLS"));
+  //     this.productosVentaActual = productosEnVentasActuales.filter(v => v.ventaId == this.idVentaActiva);
       
-      this.cantidadArticulos = 0;
-      this.ventaTotalPesos = 0;
-      this.productosVentaActual.map(item => {
-        this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
-        this.ventaTotalPesos += item.cantidad * item.precioVenta;
-      })
-  }
+  //     this.cantidadArticulos = 0;
+  //     this.ventaTotalPesos = 0;
+  //     this.productosVentaActual.map(item => {
+  //       this.cantidadArticulos += item.seVende == 2 ? 1 : item.cantidad;
+  //       this.ventaTotalPesos += item.importe;
+  //     })
+  // }
 
   mostrarListaVentas() {
     Swal.fire({
@@ -175,6 +154,7 @@ export class VentasFooterComponent implements OnInit {
       didOpen:() => {
         const popup = Swal.getPopup()!
         this.inputVentaActualModal = popup.querySelector('#inputVentaActiva')
+        this.inputVentaActualModalInterno = popup.querySelector('#inputVentaActivaInterno')
         // this.inputProductoSeleccionado = popup.querySelector('#inputProductoSeleccionado') as HTMLInputElement
         // this.inputProductoSeleccionado.value='';
         },
@@ -190,7 +170,8 @@ export class VentasFooterComponent implements OnInit {
     }).then(res=>{
       if(res.isConfirmed) {
         if(this.inputVentaActualModal.value != '') {
-          this.ventasService.setVentaActiva(parseInt(this.inputVentaActualModal.value));
+          this.ventasdbService.setVentaActiva(this.inputVentaActualModalInterno.value);
+          // this.obtenerVentasActivas.emit();
         } else {
         }
       } else {
@@ -214,8 +195,11 @@ export class VentasFooterComponent implements OnInit {
       didOpen:() => {
         const popup = Swal.getPopup()!
         this.pagoConInput = popup.querySelector('#pagoCon') as HTMLInputElement
-        this.pagoConInput.value='';
+        // Establecer el valor con el total de la venta
+        this.pagoConInput.value = this.ventaTotalPesos.toString();
         this.pagoConInput.focus();
+        // Seleccionar todo el texto para que se sobrescriba al teclear
+        this.pagoConInput.select();
 
         // this.inputProductoSeleccionado = popup.querySelector('#inputProductoSeleccionado') as HTMLInputElement
         // this.inputProductoSeleccionado.value='';

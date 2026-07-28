@@ -1,95 +1,178 @@
-<div class="bg-light px-3 pt-3">
-  <form (submit)="agregarProductoVentaActual(buscarProducto.palabraClave)">
-    <div>
-      <div class="input-group w-50">
-        <input tabindex="-1" [disabled] = "idVentaActiva == 0" type="text" class="form-control" [(ngModel)] = "buscarProducto.palabraClave" name="codigoDeProducto" id="codigoDeProducto" #codigoDeProducto placeholder="Código del producto" aria-label="Código del producto" aria-describedby="button-addon2" autocomplete="off">
-        <div class="input-group-append">
-          <button tabindex="-1" [disabled] = "idVentaActiva == 0" class="btn btn-success" (click)="agregarProductoVentaActual(buscarProducto.palabraClave)" type="button" id="button-addon2">Agregar producto</button>
+<div class="ventas-wrapper">
+  <!-- Barra de búsqueda y botones en una línea -->
+  <div class="barra-herramientas">
+    <div class="container-herramientas">
+      <form (submit)="agregarProductoVentaActual(buscarProducto.palabraClave)" class="form-busqueda">
+        <div class="input-wrapper">
+          <i class="fa fa-barcode icono-busqueda"></i>
+          <input 
+            tabindex="-1" 
+            [disabled]="idVentaActiva == 0" 
+            type="text" 
+            class="input-codigo" 
+            [(ngModel)]="buscarProducto.palabraClave" 
+            name="codigoDeProducto" 
+            id="codigoDeProducto" 
+            #codigoDeProducto 
+            placeholder="Escanea código" 
+            autocomplete="off">
+          <button 
+            tabindex="-1" 
+            [disabled]="idVentaActiva == 0" 
+            class="btn-agregar" 
+            (click)="agregarProductoVentaActual(buscarProducto.palabraClave)" 
+            type="button">
+            <i class="fa fa-plus"></i>
+          </button>
         </div>
-      </div>
+      </form>
+      
+      <app-ventas-navbar (evento)="procesarEvento($event)"></app-ventas-navbar>
     </div>
-  </form>
-</div>
+  </div>
 
-<app-ventas-navbar (evento)="procesarEvento($event)"></app-ventas-navbar>
+  <div class="contenedor-ventas animated fadeIn faster" [ngClass]="ventas.length == 0 ? 'sin-ventas' : ''">
 
-<div class="animated fadeIn faster" [ngClass]="ventas.length == 0 ? 'sin-ventas' : ''" style="min-height: calc(100vh - 297px); display: flex; flex-direction: column;">
-  <!-- <div class="bg-light p-3">
-    <form (submit)="agregarProductoVentaActual(buscarProducto.palabraClave)">
-      <div>
-        <div class="input-group w-50">
-          <input type="text" class="form-control" [(ngModel)] = "buscarProducto.palabraClave" name="codigoDeProducto" id="codigoDeProducto" #codigoDeProducto placeholder="Código del producto" aria-label="Código del producto" aria-describedby="button-addon2" autocomplete="off">
-          <div class="input-group-append">
-            <button class="btn btn-success" (click)="agregarProductoVentaActual(buscarProducto.palabraClave)" type="button" id="button-addon2">Agregar producto</button>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div> -->
-
-
-  <ul class="nav nav-tabs" *ngIf="ventas.length > 0">
-    <li class="nav-item" *ngFor="let venta of ventas; let i = index">
-      <a class="nav-link" [ngClass]="venta.idTemp == idVentaActiva ? 'active animated fadeInUp faster' : ''" (click)="seleccionarComoVentaActiva(venta.idTemp)"><i class="fa fa-ticket"></i> {{ venta.idTemp }}</a>
+  <!-- Pestañas de ventas mejoradas -->
+  <ul class="pestanas-ventas" *ngIf="ventas.length > 0">
+    <li class="pestana-item" *ngFor="let venta of ventas; let i = index">
+      <button 
+        class="pestana-btn" 
+        [ngClass]="venta.id == idVentaActivaInterno && !cambiandoDeVenta ? 'active' : ''" 
+        (click)="seleccionarComoVentaActiva(venta.idTemp, venta.id)">
+        <i *ngIf="venta.id == idVentaActivaInterno && cambiandoDeVenta && duracionEnSegundos >= 1; else iconoTicket" 
+           class="fa fa-spinner fa-pulse"></i>
+        <ng-template #iconoTicket>
+          <i class="fa fa-ticket"></i>
+        </ng-template>
+        <span class="pestana-nombre">{{ venta.nombre || venta.idTemp }}</span>
+      </button>
     </li>
   </ul>
 
-
-
-  <table class="table mb-0" *ngIf="ventas.length > 0; else sinVentasActivas">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col" style="width:15%" class="text-center">Código de barras</th>
-        <th scope="col" style="width:25%">Descripción</th>
-        <th scope="col" style="width:15%" class="text-center">Precio unitario</th>
-        <th scope="col" style="width:15%" class="text-center">Cantidad</th>
-        <th scope="col" style="width:15%" class="text-center">Importe</th>
-        <th scope="col" style="width:15%" class="text-center">Existencia</th>
-      </tr>
-    </thead>
-  </table>
+  <!-- Tabla de productos mejorada -->
+  <div class="tabla-container" *ngIf="ventas.length > 0; else sinVentasActivas">
+    <table class="tabla-productos">
+      <thead>
+        <tr>
+          <th class="col-codigo">Código</th>
+          <th class="col-descripcion">Descripción</th>
+          <th class="col-precio">Precio Unit.</th>
+          <th class="col-cantidad">Cantidad</th>
+          <th class="col-importe">Importe</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
 
   <ng-template #sinVentasActivas>
-    <div class="text-center" style="margin-top: 65px;">
-      Presione la tecla <span class="functionKeys">F6</span> para iniciar una venta
+    <div class="estado-vacio" *ngIf="cargandoVentas; else noExistenVentasActivas">
+      <div class="spinner-container">
+        <i class="fa fa-spinner fa-pulse fa-3x"></i>
+        <p>Cargando ventas actuales...</p>
+      </div>
     </div>
+    <ng-template #noExistenVentasActivas>
+      <div class="estado-vacio">
+        <div class="sin-ventas-mensaje">
+          <i class="fa fa-shopping-cart fa-4x"></i>
+          <h3>No hay ventas activas</h3>
+          <p>Presiona <span class="functionKeys">F6</span> para iniciar una nueva venta</p>
+        </div>
+      </div>
+    </ng-template>
   </ng-template>
-  <div style="height: calc(100vh - 497px); overflow-y: auto;">
-    <div *ngFor="let producto of productosVentaActual; let i = index" class="animated fadeIn faster">
-      <div *ngIf="producto.ventaId == idVentaActiva">
-        <input (change)="selectRow(producto.id)" class="form-check-input" type="radio" name="productosRadioSelect" [id]=producto.id [value]=producto.id [checked]="producto.id == rowSelected">
-        <div class="radio-productos-venta"  [ngClass]="i % 2 === 0 ? 'even' : 'odd'">
-          <label [for]=producto.id class="form-check-label w-100">
-            <label class="form-check-label text-center" [for]=producto.id  style="width:15%; padding: .5rem; border-right: solid 1px #fff;">
-              <div class="d-flex overflow-hidden" style="text-wrap: nowrap; place-content: center;">{{producto.codigoDeBarras}}</div>
-            </label>
-            <label class="form-check-label" [for]=producto.id style="width:25%; padding: .5rem; border-right: solid 1px #fff;">
-              <div class="d-flex overflow-hidden" style="text-wrap: nowrap;">{{producto.descripcion}}</div>
-            </label>
-            <label class="form-check-label text-center" [for]=producto.id style="width:15%; padding: .5rem; border-right: solid 1px #fff;">{{producto.precioVenta | currency: '$'}}</label>
-            <label class="form-check-label" [for]=producto.id style="width:15%; padding: 0 .5rem;">
-              <div class="btn-group-sm d-flex justify-content-between" role="group">
-                <button tabindex="-1" type="button" class="btn btn-secondary btn-outline-light" [disabled] = "producto.seVende == 2" (click)="restarCantidad(producto.id)"><i class="fa fa-minus"></i></button>
-                <button tabindex="-1" type="button" class="btnCantidad">{{producto.cantidad | number: producto.seVende == 2 ? '1.3' : '1.0'}}</button>
-                <button tabindex="-1" type="button" class="btn btn-secondary btn-outline-light" [disabled] = "producto.seVende == 2" (click)="agregarCantidad(producto.id)"><i class="fa fa-plus"></i></button>
+
+  <!-- Lista de productos con scroll -->
+  <div class="productos-scroll-container">
+    <div *ngIf="!cambiandoDeVenta">
+      <div *ngFor="let producto of productosVentaActual; let i = index" class="animated fadeIn faster">
+        <div *ngIf="producto.ventaId == idVentaActivaInterno">
+          <input 
+            (change)="selectRow(producto.id)" 
+            class="form-check-input" 
+            type="radio" 
+            name="productosRadioSelect" 
+            [id]="producto.id" 
+            [value]="producto.id" 
+            [checked]="producto.id == rowSelected">
+          
+          <label [for]="producto.id" class="fila-producto" [ngClass]="i % 2 === 0 ? 'even' : 'odd'">
+            <div class="col-codigo">
+              <span class="texto-codigo">{{producto.codigoDeBarras}}</span>
+            </div>
+            <div class="col-descripcion">
+              <span class="texto-descripcion">{{producto.descripcion}}</span>
+            </div>
+            <div class="col-precio">
+              <span class="texto-precio">{{producto.precioVenta | currency: '$'}}</span>
+            </div>
+            <div class="col-cantidad">
+              <div class="controles-cantidad">
+                <button 
+                  tabindex="-1" 
+                  type="button" 
+                  class="btn-cantidad-control" 
+                  [disabled]="producto.seVende == 2 || producto.seVende == 0" 
+                  (click)="restarCantidad(producto.id)">
+                  <i class="fa fa-minus"></i>
+                </button>
+                <span class="valor-cantidad">{{producto.cantidad | number: producto.seVende == 2 ? '1.3' : '1.0'}}</span>
+                <button 
+                  tabindex="-1" 
+                  type="button" 
+                  class="btn-cantidad-control" 
+                  [disabled]="producto.seVende == 2 || producto.seVende == 0" 
+                  (click)="agregarCantidad(producto.id)">
+                  <i class="fa fa-plus"></i>
+                </button>
               </div>
-            </label>
-            <label class="form-check-label text-right" [for]=producto.id style="width:15%; padding: .5rem; border-right: solid 1px #fff;  border-left: solid 1px #fff;">
-              <strong>{{producto.precioVenta * producto.cantidad | currency: '$'}}</strong>
-            </label>
+            </div>
+            <div class="col-importe">
+              <strong class="texto-importe">{{producto.importe | currency: '$'}}</strong>
+            </div>
           </label>
         </div>
       </div>
     </div>
   </div>
-  <footer class="footer" style="margin-top:auto;">
-      <app-ventas-footer></app-ventas-footer>
-  </footer>
+</div>
+
+<footer class="footer-ventas">
+    <app-ventas-footer (nuevaVenta)="crearNuevaVenta()" (obtenerVentasActivas)="obtenerVentasActivas($event)" [cambiandoDeVenta]="cambiandoDeVenta"></app-ventas-footer>
+</footer>
 </div>
 
 <!-- MODAL PARA BUSQUEDA DE PRODUCTOS -->
 <div style="display: none;"> 
   <div #modalBusquedaProductos>
-    <app-buscar-productos [esVenta] = true></app-buscar-productos>    
+    <app-buscar-productos #buscarProductosComponent [esVenta] = true></app-buscar-productos>    
   </div>
 </div>
+
+<!-- MODAL PARA PRODUCTO COMÚN -->
+<div style="display: none;"> 
+  <div #modalProductoComun>
+      <app-producto-comun (insertar)="insertarProductoComun($event)"></app-producto-comun>    
+  </div>
+</div>
+
+<!-- MODAL PARA ENTRADA DE DINERO -->
+<div style="display: none;"> 
+  <div #modalEntradaDinero>
+      <app-entrada-dinero></app-entrada-dinero>    
+  </div>
+</div>
+
+<!-- MODAL PARA SALIDA DE DINERO -->
+<div style="display: none;"> 
+  <div #modalSalidaDinero>
+      <app-salida-dinero></app-salida-dinero>    
+  </div>
+</div>
+
+<!-- MODAL VENTAS DEL DIA -->
+<app-ventas-del-dia #modalVentasDelDia></app-ventas-del-dia>
+
+<!-- BARRA DE ESTADO -->
+<app-barra-estado (abrirVentasDelDia)="abrirVentasDelDia()"></app-barra-estado>
