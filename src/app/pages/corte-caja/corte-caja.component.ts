@@ -4,9 +4,11 @@ import { AuthService } from 'src/app/services/auth.service';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { EntradasDineroService } from 'src/app/services/entradas-dinero.service';
 import { SalidasDineroService } from 'src/app/services/salidas-dinero.service';
+import { ClientesService } from 'src/app/services/clientes.service';
 import VentaInterface from 'src/app/interfaces/ventas.interface';
 import EntradaDineroInterface from 'src/app/interfaces/entrada-dinero.interface';
 import SalidaDineroInterface from 'src/app/interfaces/salida-dinero.interface';
+import { AbonoInterface } from 'src/app/interfaces/cliente.interface';
 import Swal from 'sweetalert2';
 
 interface ResumenVentas {
@@ -30,6 +32,19 @@ interface Devolucion {
   fecha: Date;
   monto: number;
   articulos: string;
+}
+
+interface DevolucionDesglosada {
+  folio: string;
+  fecha: Date;
+  montoDevolucion: number;
+  montoOriginal: number;
+  articulos: string;
+}
+
+interface AbonoEnriquecido extends AbonoInterface {
+  nombreCliente?: string;
+  idTempVenta?: number;
 }
 
 @Component({
@@ -62,7 +77,10 @@ export class CorteCajaComponent implements OnInit {
   };
   ventasPorDepartamento: VentaPorDepartamento[] = [];
   devoluciones: Devolucion[] = [];
+  devolucionesDesglosadas: DevolucionDesglosada[] = [];
   totalDevoluciones: number = 0;
+  totalDevolucionesCompletas: number = 0;
+  totalDevolucionesParciales: number = 0;
   dineroEnCaja: number = 0;
   ganancia: number = 0;
   fechaGeneracion: Date = new Date();
@@ -76,6 +94,10 @@ export class CorteCajaComponent implements OnInit {
   totalEntradas: number = 0;
   totalSalidas: number = 0;
   
+  // Abonos a créditos
+  abonos: AbonoEnriquecido[] = [];
+  totalAbonos: number = 0;
+  
   // Control de secciones colapsables
   mostrarVentasPorDepartamento: boolean = false;
 
@@ -84,7 +106,8 @@ export class CorteCajaComponent implements OnInit {
     private authService: AuthService,
     private departamentosService: DepartamentosService,
     private entradasService: EntradasDineroService,
-    private salidasService: SalidasDineroService
+    private salidasService: SalidasDineroService,
+    private clientesService: ClientesService
   ) { }
 
   ngOnInit(): void {
@@ -158,7 +181,7 @@ export class CorteCajaComponent implements OnInit {
         this.fechaFin
       );
 
-      // Cargar ventas canceladas (devoluciones)
+      // Cargar ventas canceladas (devoluciones completas)
       const ventasCanceladas = await this.ventasService.obtenerVentasPorStatusYPeriodo(
         '2',
         this.fechaInicio,
@@ -167,6 +190,8 @@ export class CorteCajaComponent implements OnInit {
 
       // Procesar ventas completadas
       this.ventas = [];
+      this.devolucionesDesglosadas = [];
+      
       ventasCompletadas.forEach((doc) => {
         const venta = { id: doc.id, ...doc.data() } as VentaInterface;
         
@@ -176,9 +201,20 @@ export class CorteCajaComponent implements OnInit {
         }
         
         this.ventas.push(venta);
+        
+        // Procesar devoluciones parciales (ventas con totalDevoluciones > 0)
+        if (venta.totalDevoluciones && parseFloat(venta.totalDevoluciones) > 0) {
+          this.devolucionesDesglosadas.push({
+            folio: venta.idTemp?.toString() || 'N/A',
+            fecha: venta.fechaVentaFinalizada?.toDate() || new Date(),
+            montoDevolucion: parseFloat(venta.totalDevoluciones),
+            montoOriginal: parseFloat(venta.totalOriginal || venta.total || '0'),
+            articulos: 'Parcial'
+          });
+        }
       });
 
-      // Procesar devoluciones
+      // Procesar devoluciones completas (ventas canceladas)
       this.devoluciones = [];
       ventasCanceladas.forEach((doc) => {
         const venta = { id: doc.id, ...doc.data() } as VentaInterface;
@@ -195,6 +231,9 @@ export class CorteCajaComponent implements OnInit {
           articulos: venta.detalleProductos?.length.toString() || '0'
         });
       });
+
+      // Cargar abonos del periodo
+      await this.cargarAbonos();
 
       // Cargar entradas y salidas de efectivo
       await this.cargarEntradasYSalidas();
@@ -262,7 +301,9 @@ export class CorteCajaComponent implements OnInit {
     }
 
     // Calcular total de devoluciones
-    this.totalDevoluciones = this.devoluciones.reduce((sum, dev) => sum + dev.monto, 0);
+    this.totalDevolucionesCompletas = this.devoluciones.reduce((sum, dev) => sum + dev.monto, 0);
+    this.totalDevolucionesParciales = this.devolucionesDesglosadas.reduce((sum, dev) => sum + dev.montoDevolucion, 0);
+    this.totalDevoluciones = this.totalDevolucionesCompletas + this.totalDevolucionesParciales;
   }
 
   calcularVentasPorDepartamento() {
@@ -361,9 +402,68 @@ export class CorteCajaComponent implements OnInit {
     }
   }
 
+  async cargarAbonos() {
+    try {
+      // Obtener todos los abonos del periodo usando la colección de abonos
+      const abonosSnapshot = await this.clientesService.obtenerAbonosPorPeriodo(this.fechaInicio, this.fechaFin);
+      const abonosTemp: AbonoInterface[] = [];
+
+      abonosSnapshot.forEach((doc) => {
+        const abono = { id: doc.id, ...doc.data() } as AbonoInterface;
+        const fechaAbono = abono.fecha.toDate();
+        
+        // Verificar que esté en el rango de fechas
+        if (fechaAbono >= this.fechaInicio && fechaAbono <= this.fechaFin) {
+          // Filtrar por cajero si es corte de cajero
+          if (this.tipoCorte === 'cajero' && abono.idCajero !== this.idCajero) {
+            return;
+          }
+          
+          abonosTemp.push(abono);
+        }
+      });
+
+      // Enriquecer abonos con nombre de cliente y idTemp de venta
+      this.abonos = await Promise.all(
+        abonosTemp.map(async (abono) => {
+          const abonoEnriquecido: AbonoEnriquecido = { ...abono };
+
+          // Obtener nombre del cliente
+          try {
+            const cliente = await this.clientesService.obtenerClientePorId(abono.idCliente);
+            if (cliente) {
+              abonoEnriquecido.nombreCliente = cliente.nombre;
+            }
+          } catch (error) {
+            console.error('Error al obtener cliente:', error);
+            abonoEnriquecido.nombreCliente = 'Cliente no encontrado';
+          }
+
+          // Obtener idTemp de la venta a crédito
+          try {
+            const ventaCredito = await this.clientesService.obtenerVentaCreditoPorId(abono.idVentaCredito);
+            if (ventaCredito) {
+              abonoEnriquecido.idTempVenta = ventaCredito.idTempVenta;
+            }
+          } catch (error) {
+            console.error('Error al obtener venta crédito:', error);
+            abonoEnriquecido.idTempVenta = 0;
+          }
+
+          return abonoEnriquecido;
+        })
+      );
+
+      // Calcular total de abonos
+      this.totalAbonos = this.abonos.reduce((sum, abono) => sum + abono.monto, 0);
+    } catch (error) {
+      console.error('Error al cargar abonos:', error);
+    }
+  }
+
   calcularDineroEnCaja() {
-    // Dinero en caja = Efectivo inicial + Ventas en efectivo + Entradas - Devoluciones - Salidas
-    this.dineroEnCaja = this.efectivoInicial + this.resumenVentas.totalVentasEfectivo + this.totalEntradas - this.totalDevoluciones - this.totalSalidas;
+    // Dinero en caja = Efectivo inicial + Ventas en efectivo + Abonos + Entradas - Devoluciones - Salidas
+    this.dineroEnCaja = this.efectivoInicial + this.resumenVentas.totalVentasEfectivo + this.totalAbonos + this.totalEntradas - this.totalDevoluciones - this.totalSalidas;
     
     // Ganancia = Ventas totales + Entradas - Devoluciones - Salidas (gastos) 
     // (falta calcular costo de productos para ganancia real)
@@ -375,11 +475,17 @@ export class CorteCajaComponent implements OnInit {
     this.tipoCorte = null;
     this.ventas = [];
     this.devoluciones = [];
+    this.devolucionesDesglosadas = [];
     this.ventasPorDepartamento = [];
     this.entradas = [];
     this.salidas = [];
+    this.abonos = [];
     this.totalEntradas = 0;
     this.totalSalidas = 0;
+    this.totalAbonos = 0;
+    this.totalDevoluciones = 0;
+    this.totalDevolucionesCompletas = 0;
+    this.totalDevolucionesParciales = 0;
   }
 
   calcularArticulosVenta(venta: VentaInterface): number {

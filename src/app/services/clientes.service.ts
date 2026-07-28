@@ -128,6 +128,37 @@ export class ClientesService {
   }
 
   /**
+   * Obtener ventas a crédito por ID de venta (idVenta de Firestore)
+   */
+  async obtenerVentasCreditoPorIdVenta(idVenta: string) {
+    const q = query(
+      this.ventasCreditoCollectionRef,
+      where('idVenta', '==', idVenta)
+    );
+    
+    const snapshot = await getDocs(q);
+    const ventas: VentaCreditoInterface[] = [];
+    snapshot.forEach(doc => {
+      ventas.push({ id: doc.id, ...(doc.data() as any) } as VentaCreditoInterface);
+    });
+    
+    return ventas;
+  }
+
+  /**
+   * Obtener una venta a crédito por su ID de documento en Firestore
+   */
+  async obtenerVentaCreditoPorId(idVentaCredito: string): Promise<VentaCreditoInterface | null> {
+    const docRef = doc(this.firestore, 'ventasCredito', idVentaCredito);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as VentaCreditoInterface;
+    }
+    return null;
+  }
+
+  /**
    * Registrar una venta a crédito
    */
   registrarVentaCredito(ventaCredito: VentaCreditoInterface) {
@@ -142,6 +173,26 @@ export class ClientesService {
     const liquidada = nuevoSaldo <= 0;
     
     return updateDoc(ventaCreditoDocRef, {
+      saldoPendiente: nuevoSaldo,
+      liquidada: liquidada
+    });
+  }
+
+  /**
+   * Actualizar venta a crédito con nuevos productos, total y saldo (para devoluciones parciales)
+   */
+  async actualizarVentaCreditoDespuesDevolucion(
+    idVentaCredito: string, 
+    nuevosProductos: any[], 
+    nuevoTotal: number,
+    nuevoSaldo: number
+  ) {
+    const ventaCreditoDocRef = doc(this.firestore, `ventasCredito/${idVentaCredito}`);
+    const liquidada = nuevoSaldo <= 0;
+    
+    return updateDoc(ventaCreditoDocRef, {
+      productos: nuevosProductos,
+      total: nuevoTotal,
       saldoPendiente: nuevoSaldo,
       liquidada: liquidada
     });
@@ -192,5 +243,39 @@ export class ClientesService {
     });
     
     return abonos;
+  }
+
+  /**
+   * Obtener abonos de un periodo de fechas
+   */
+  async obtenerAbonosPorPeriodo(fechaInicio: Date, fechaFin: Date) {
+    const timestampInicio = Timestamp.fromDate(fechaInicio);
+    const timestampFin = Timestamp.fromDate(fechaFin);
+    
+    const q = query(
+      this.abonosCollectionRef,
+      where('fecha', '>=', timestampInicio),
+      where('fecha', '<=', timestampFin),
+      orderBy('fecha', 'desc')
+    );
+    
+    const snapshot = await getDocs(q);
+    return snapshot;
+  }
+
+  /**
+   * Eliminar un abono
+   */
+  eliminarAbono(idAbono: string) {
+    const abonoDocRef = doc(this.firestore, `abonos/${idAbono}`);
+    return deleteDoc(abonoDocRef);
+  }
+
+  /**
+   * Eliminar una venta a crédito
+   */
+  eliminarVentaCredito(idVentaCredito: string) {
+    const ventaCreditoDocRef = doc(this.firestore, `ventasCredito/${idVentaCredito}`);
+    return deleteDoc(ventaCreditoDocRef);
   }
 }

@@ -295,6 +295,18 @@
     letter-spacing: 0.5px;
 }
 
+.badge-credito-lista {
+    display: inline-block;
+    background: #f39c12;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .venta-folio {
     font-size: 0.85rem;
     color: #7f8c8d;
@@ -423,6 +435,18 @@
     .separador {
         color: #bdc3c7;
         font-weight: bold;
+    }
+    
+    .badge-credito {
+        display: inline-block;
+        background: #f39c12;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 }
 
@@ -598,6 +622,47 @@
     border-top: 2px solid #e0e0e0;
 }
 
+.desglose-devoluciones {
+    background: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+    border-left: 3px solid #e74c3c;
+
+    .desglose-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.25rem 0;
+
+        .desglose-label {
+            font-weight: 600;
+            color: #5a6c7d;
+            font-size: 0.9rem;
+        }
+
+        .desglose-value {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        &.devolucion {
+            .desglose-label {
+                color: #e74c3c;
+            }
+            .desglose-value {
+                color: #e74c3c;
+            }
+        }
+    }
+
+    .desglose-separador {
+        border-bottom: 2px solid #dee2e6;
+        margin: 0.5rem 0;
+    }
+}
+
 .resumen-fila {
     display: flex;
     justify-content: space-between;
@@ -625,6 +690,15 @@
         &.total-value {
             font-size: 1.25rem;
             color: #27ae60;
+        }
+        
+        &.credito-badge {
+            background: #f39c12;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
         }
     }
 }

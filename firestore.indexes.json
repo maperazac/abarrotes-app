@@ -1,0 +1,75 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ventasCredito",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "liquidada",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaVenta",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ventasCredito",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaVenta",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "abonos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idVentaCredito",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "abonos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "abonos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "fecha",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -235,9 +235,8 @@
             <span class="valor positivo">{{ formatearMoneda(resumenVentas.totalVentasEfectivo) }}</span>
           </div>
           <div class="fila-resumen">
-            <span class="label">Pagos de créditos:</span>
-            <span class="valor positivo">$0.00</span>
-            <span class="badge-pendiente">Pendiente</span>
+            <span class="label">Abonos a créditos ({{ abonos.length }}):</span>
+            <span class="valor positivo">{{ formatearMoneda(totalAbonos) }}</span>
           </div>
           <div class="fila-resumen">
             <span class="label">Otras entradas ({{ entradas.length }}):</span>
@@ -245,8 +244,31 @@
           </div>
           <div class="fila-resumen destacada">
             <span class="label">Total entradas:</span>
-            <span class="valor positivo">{{ formatearMoneda(efectivoInicial + resumenVentas.totalVentasEfectivo + totalEntradas) }}</span>
+            <span class="valor positivo">{{ formatearMoneda(efectivoInicial + resumenVentas.totalVentasEfectivo + totalAbonos + totalEntradas) }}</span>
           </div>
+        </div>
+        
+        <!-- Detalle de abonos -->
+        <div *ngIf="abonos.length > 0" style="margin-top: 1rem;">
+          <h4 style="font-size: 1rem; color: #4a5568; margin-bottom: 0.5rem;">Detalle de Abonos a Créditos:</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Venta</th>
+                <th class="text-right">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let abono of abonos">
+                <td>{{ formatearFechaCorta(abono.fecha.toDate()) }}</td>
+                <td>{{ abono.nombreCliente || 'N/A' }}</td>
+                <td>#{{ abono.idTempVenta || 'N/A' }}</td>
+                <td class="text-right">{{ formatearMoneda(abono.monto) }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         
         <!-- Detalle de otras entradas -->
@@ -278,8 +300,12 @@
         </h3>
         <div class="tabla-resumen">
           <div class="fila-resumen">
-            <span class="label">Cancelaciones:</span>
-            <span class="valor negativo">{{ formatearMoneda(totalDevoluciones) }}</span>
+            <span class="label">Cancelaciones completas ({{ devoluciones.length }}):</span>
+            <span class="valor negativo">{{ formatearMoneda(totalDevolucionesCompletas) }}</span>
+          </div>
+          <div class="fila-resumen">
+            <span class="label">Devoluciones parciales ({{ devolucionesDesglosadas.length }}):</span>
+            <span class="valor negativo">{{ formatearMoneda(totalDevolucionesParciales) }}</span>
           </div>
           <div class="fila-resumen">
             <span class="label">Gastos/Salidas ({{ salidas.length }}):</span>
@@ -314,11 +340,11 @@
       </div>
     </div>
 
-    <!-- Cancelaciones -->
+    <!-- Cancelaciones Completas -->
     <div class="seccion-reporte">
       <h3 class="titulo-seccion">
         <i class="fa fa-ban" aria-hidden="true"></i>
-        Cancelaciones de Ventas
+        Cancelaciones Completas de Ventas
       </h3>
       <div class="tabla-devoluciones" *ngIf="devoluciones.length > 0">
         <table>
@@ -340,26 +366,89 @@
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="3" class="text-right"><strong>Total Cancelaciones:</strong></td>
-              <td class="text-right negativo"><strong>{{ formatearMoneda(totalDevoluciones) }}</strong></td>
+              <td colspan="3" class="text-right"><strong>Total Cancelaciones Completas:</strong></td>
+              <td class="text-right negativo"><strong>{{ formatearMoneda(totalDevolucionesCompletas) }}</strong></td>
             </tr>
           </tfoot>
         </table>
       </div>
-      <p class="mensaje-vacio" *ngIf="devoluciones.length === 0">No hay cancelaciones en este período</p>
+      <p class="mensaje-vacio" *ngIf="devoluciones.length === 0">No hay cancelaciones completas en este período</p>
     </div>
 
-    <!-- Pagos de Créditos (Pendiente) -->
-    <div class="seccion-reporte seccion-pendiente">
+    <!-- Devoluciones Parciales -->
+    <div class="seccion-reporte">
+      <h3 class="titulo-seccion">
+        <i class="fa fa-undo" aria-hidden="true"></i>
+        Devoluciones Parciales
+      </h3>
+      <div class="tabla-devoluciones" *ngIf="devolucionesDesglosadas.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Fecha/Hora</th>
+              <th class="text-right">Venta Original</th>
+              <th class="text-right">Devolución</th>
+              <th class="text-right">Saldo Actual</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dev of devolucionesDesglosadas">
+              <td>{{ dev.folio }}</td>
+              <td>{{ formatearFechaCorta(dev.fecha) }}</td>
+              <td class="text-right">{{ formatearMoneda(dev.montoOriginal) }}</td>
+              <td class="text-right negativo">-{{ formatearMoneda(dev.montoDevolucion) }}</td>
+              <td class="text-right">{{ formatearMoneda(dev.montoOriginal - dev.montoDevolucion) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-right"><strong>Total Devoluciones Parciales:</strong></td>
+              <td class="text-right negativo" colspan="2"><strong>{{ formatearMoneda(totalDevolucionesParciales) }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="mensaje-vacio" *ngIf="devolucionesDesglosadas.length === 0">No hay devoluciones parciales en este período</p>
+    </div>
+
+    <!-- Abonos a Créditos -->
+    <div class="seccion-reporte">
       <h3 class="titulo-seccion">
         <i class="fa fa-credit-card" aria-hidden="true"></i>
-        Pagos de Créditos
-        <span class="badge-pendiente">Pendiente de implementar</span>
+        Abonos Recibidos de Clientes a Crédito
       </h3>
-      <p class="mensaje-info">
-        <i class="fa fa-info-circle" aria-hidden="true"></i>
-        Esta sección mostrará los abonos recibidos de clientes que compraron a crédito.
-      </p>
+      <div class="tabla-ventas" *ngIf="abonos.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha/Hora</th>
+              <th>Cliente</th>
+              <th>Venta</th>
+              <th>Cajero</th>
+              <th>Observaciones</th>
+              <th class="text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let abono of abonos">
+              <td>{{ formatearFechaCorta(abono.fecha.toDate()) }}</td>
+              <td>{{ abono.nombreCliente || 'N/A' }}</td>
+              <td>#{{ abono.idTempVenta || 'N/A' }}</td>
+              <td>{{ abono.nombreCajero }}</td>
+              <td>{{ abono.observaciones || '-' }}</td>
+              <td class="text-right positivo">{{ formatearMoneda(abono.monto) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" class="text-right"><strong>Total Abonos Recibidos:</strong></td>
+              <td class="text-right positivo"><strong>{{ formatearMoneda(totalAbonos) }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="mensaje-vacio" *ngIf="abonos.length === 0">No se recibieron abonos en este período</p>
     </div>
 
     <!-- Pie del reporte -->

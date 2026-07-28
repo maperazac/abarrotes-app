@@ -6,6 +6,22 @@ La aplicación no se conecta a Firebase Firestore. Esto puede deberse a:
 2. **Usuario no autenticado** con Firebase Auth
 3. **Falta de índices** compuestos en Firestore
 
+## Solución Rápida - Estado de Cuenta de Clientes
+
+Si tienes el error "No se pudo cargar el estado de cuenta del cliente":
+
+1. **Desplegar las reglas actualizadas**: Ejecuta en la terminal:
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
+
+2. **Desplegar los índices**: Ejecuta en la terminal:
+   ```bash
+   firebase deploy --only firestore:indexes
+   ```
+
+Esto agregará las reglas de seguridad para `clientes`, `ventasCredito` y `abonos`, además de crear los índices compuestos necesarios para las consultas.
+
 ---
 
 ## Solución Paso a Paso

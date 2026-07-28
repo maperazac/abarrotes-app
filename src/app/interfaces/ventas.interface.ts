@@ -6,13 +6,16 @@ export default interface VentaInterface {
     nombre?: string; // Nombre temporal para identificar la venta en las pestañas (no se guarda en BD, solo para UI)
     fechaVentaIniciada: Timestamp;
     fechaVentaFinalizada?: Timestamp;
-    total: string; // Es la cantidad total de la venta, el ingreso neto.
+    total: string; // Es la cantidad total de la venta, el ingreso neto (después de devoluciones).
+    totalOriginal?: string; // Total de la venta antes de cualquier devolución
+    totalDevoluciones?: string; // Suma total de todas las devoluciones realizadas
     totalArticulos: string; // Articulos vendidos en esta venta. En otra tabla (detalleVentas) se va a registrar producto por producto asociado a cada venta.
     formaDePago: number; // 1 = efectivo, 2 = credito(fiado) Crear una tabla con los tipos de pago aceptados (efectivo, credito(fiado), tarjeta, etc)
     totalPagadoEfectivo: string;
     totalPagadoCredito: string; // cuando es fiado
     cambio: string; // El dinero que se le dio de cambio al cliente, se calcula restando el pagoCon - totalVenta
     idCliente?: string; // solo se registra si fue venta a crédito(fiado), si no fue fiado se le pone en 0
+    nombreCliente?: string; // nombre del cliente cuando es venta a crédito
     pagoCon?: string; // Cantidad en efectivo que el cliente entrega al pagar, puede ser mayor que el total de la venta, por ejemplo si fueron 167 y paga con un billete de 200. Si fue venta a credito (fiado) se manda en 0.
     idCajero: string; // registrar el id del cajero que estaba logueado cuando se registró esta venta
     nombreCajero?: string; // nombre del usuario cajero que registró la venta

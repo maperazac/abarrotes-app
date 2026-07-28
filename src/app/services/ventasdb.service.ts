@@ -1,5 +1,5 @@
 import { EventEmitter, Injectable } from '@angular/core';
-import { addDoc, collection, deleteDoc, doc, Firestore, getDocs, orderBy, query, Timestamp, updateDoc, where } from '@angular/fire/firestore';
+import { addDoc, collection, deleteDoc, doc, Firestore, getDoc, getDocs, orderBy, query, Timestamp, updateDoc, where } from '@angular/fire/firestore';
 import ProductoInterface from '../interfaces/productos.interface';
 import VentaInterface from '../interfaces/ventas.interface';
 
@@ -145,6 +145,7 @@ export class VentasdbService {
       // idCajero: venta.idCajero,  // Se debe insertar desde que se crea la nueva venta. Aqui ya no se actualiza.
       nombreCajero: venta.nombreCajero || localStorage.getItem('nombreUsuario') || 'Desconocido', // Guardar el nombre del cajero
       idCliente: venta.idCliente,
+      nombreCliente: venta.nombreCliente || null, // Guardar el nombre del cliente si es venta a crédito
       pagoCon: venta.pagoCon,
       seleccionada: 0, // Automaticamente se le quita el status de seleccionada.
       status: "1", // Se le cambia el status a 1 (Completada),
@@ -203,6 +204,25 @@ export class VentasdbService {
     }
   }
 
+  async obtenerVentaPorId(idVenta: string): Promise<VentaInterface | null> {
+    try {
+      const ventaRef = doc(this.firestore, `ventas/${idVenta}`);
+      const ventaDoc = await getDoc(ventaRef);
+      
+      if (ventaDoc.exists()) {
+        return {
+          id: ventaDoc.id,
+          ...ventaDoc.data() as VentaInterface
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error al obtener venta por ID:', error);
+      return null;
+    }
+  }
+
   async cancelarVenta(idVenta: string) {
     const ventaRef = doc(this.firestore, `ventas/${idVenta}`);
     return updateDoc(ventaRef, {
@@ -217,9 +237,35 @@ export class VentasdbService {
     nuevoTotalArticulos: string
   ) {
     const ventaRef = doc(this.firestore, `ventas/${idVenta}`);
+    
+    // Obtener la venta actual para calcular devoluciones
+    const ventaSnap = await getDoc(ventaRef);
+    
+    if (!ventaSnap.exists()) {
+      throw new Error('Venta no encontrada');
+    }
+    
+    const ventaActual = ventaSnap.data() as VentaInterface;
+    const totalActual = parseFloat(ventaActual.total);
+    const nuevoTotalNum = parseFloat(nuevoTotal);
+    
+    // Si es la primera devolución, guardar el total original
+    const totalOriginal = ventaActual.totalOriginal 
+      ? ventaActual.totalOriginal 
+      : ventaActual.total;
+    
+    // Calcular el monto de esta devolución
+    const montoDevolucionActual = totalActual - nuevoTotalNum;
+    
+    // Acumular devoluciones
+    const totalDevolucionesActual = parseFloat(ventaActual.totalDevoluciones || '0');
+    const nuevoTotalDevoluciones = (totalDevolucionesActual + montoDevolucionActual).toFixed(2);
+    
     return updateDoc(ventaRef, {
       detalleProductos: detalleProductos,
       total: nuevoTotal,
+      totalOriginal: totalOriginal,
+      totalDevoluciones: nuevoTotalDevoluciones,
       totalArticulos: nuevoTotalArticulos
     });
   }

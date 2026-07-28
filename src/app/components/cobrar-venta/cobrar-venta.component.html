@@ -48,8 +48,83 @@
         </div>
         <div class="col-sm-12" *ngIf="formaPago == 2">
             <div class="row">
+                <div class="col-sm-12 mb-3">
+                    <h6><i class="fa fa-user-circle"></i> Seleccionar Cliente</h6>
+                    
+                    <!-- Cliente seleccionado -->
+                    <div *ngIf="clienteSeleccionado" class="cliente-seleccionado">
+                        <div class="cliente-info">
+                            <div class="cliente-nombre">
+                                <i class="fa fa-user"></i>
+                                <strong>{{ clienteSeleccionado.nombre }}</strong>
+                            </div>
+                            <div class="cliente-detalles">
+                                <span class="detalle-item">
+                                    <i class="fa fa-credit-card"></i>
+                                    Saldo actual: <strong>${{ clienteSeleccionado.saldoActual.toFixed(2) }}</strong>
+                                </span>
+                                <span class="detalle-item">
+                                    <i class="fa fa-money"></i>
+                                    Nuevo saldo: <strong>${{ (clienteSeleccionado.saldoActual + ventaTotalPesos).toFixed(2) }}</strong>
+                                </span>
+                                <span class="detalle-item" *ngIf="clienteSeleccionado.limiteCredito && clienteSeleccionado.limiteCredito > 0">
+                                    <i class="fa fa-flag"></i>
+                                    Límite: <strong>${{ clienteSeleccionado.limiteCredito.toFixed(2) }}</strong>
+                                </span>
+                            </div>
+                        </div>
+                        <button class="btn-remover-cliente" (click)="removerClienteSeleccionado()" type="button">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- Búsqueda de cliente -->
+                    <div *ngIf="!clienteSeleccionado" class="busqueda-cliente">
+                        <div class="input-group mb-2">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="Buscar cliente por nombre o número..."
+                                [(ngModel)]="textoBusquedaCliente"
+                                [ngModelOptions]="{standalone: true}"
+                                (keyup.enter)="buscarClientes()">
+                            <div class="input-group-append">
+                                <button 
+                                    class="btn btn-primary" 
+                                    type="button"
+                                    (click)="buscarClientes()"
+                                    [disabled]="buscandoClientes">
+                                    <i class="fa" [ngClass]="buscandoClientes ? 'fa-spinner fa-spin' : 'fa-search'"></i>
+                                    Buscar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Resultados de búsqueda -->
+                        <div class="resultados-busqueda" *ngIf="clientesEncontrados.length > 0">
+                            <div class="resultado-item" 
+                                 *ngFor="let cliente of clientesEncontrados"
+                                 (click)="seleccionarCliente(cliente)">
+                                <div class="resultado-nombre">
+                                    <i class="fa fa-user"></i>
+                                    {{ cliente.nombre }}
+                                </div>
+                                <div class="resultado-info">
+                                    <span>Saldo: ${{ cliente.saldoActual.toFixed(2) }}</span>
+                                    <span *ngIf="cliente.limiteCredito && cliente.limiteCredito > 0">
+                                        Límite: ${{ cliente.limiteCredito.toFixed(2) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-12" *ngIf="formaPago == 3">
+            <div class="row">
                 <div class="col-sm-12 area-pago">
-                    Buscar cliente: 
+                    <p><i class="fa fa-info-circle"></i> Funcionalidad de pago mixto pendiente de implementación</p>
                 </div>
             </div>
         </div>

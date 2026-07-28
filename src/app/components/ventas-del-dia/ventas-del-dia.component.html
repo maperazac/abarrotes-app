@@ -80,6 +80,7 @@
                 <div class="venta-nombre">
                   {{ venta.nombre || 'Sin nombre' }}
                   <span *ngIf="venta.status === '2'" class="badge-cancelada-lista">Cancelada</span>
+                  <span *ngIf="venta.formaDePago === 2" class="badge-credito-lista">Crédito</span>
                 </div>
                 <div class="venta-folio">
                   Folio: {{ venta.idTemp }}
@@ -123,11 +124,18 @@
                 </span>
                 <span class="separador">•</span>
                 <span class="dato-item">
+                  <strong>Forma de pago:</strong> 
+                  <span [class.badge-credito]="ventaSeleccionada.formaDePago === 2">
+                    {{ ventaSeleccionada.formaDePago === 1 ? 'Efectivo' : ventaSeleccionada.formaDePago === 2 ? 'Crédito' : 'Mixto' }}
+                  </span>
+                </span>
+                <span class="separador">•</span>
+                <span class="dato-item">
                   <strong>Cajero:</strong> {{ ventaSeleccionada.nombreCajero || ventaSeleccionada.idCajero || 'N/A' }}
                 </span>
                 <span class="separador">•</span>
                 <span class="dato-item">
-                  <strong>Cliente:</strong> {{ ventaSeleccionada.idCliente || 'N/A' }}
+                  <strong>Cliente:</strong> {{ ventaSeleccionada.nombreCliente || 'Público general' }}
                 </span>
                 <span class="separador">•</span>
                 <span class="dato-item">
@@ -182,21 +190,64 @@
 
           <!-- Resumen de la Venta -->
           <div class="resumen-venta">
+            <!-- Mostrar desglose si hay devoluciones -->
+            <div *ngIf="ventaSeleccionada.totalDevoluciones && parseFloat(ventaSeleccionada.totalDevoluciones) > 0" 
+                 class="desglose-devoluciones">
+              <div class="desglose-item">
+                <span class="desglose-label">Total original:</span>
+                <span class="desglose-value">{{ formatearMoneda(ventaSeleccionada.totalOriginal || ventaSeleccionada.total) }}</span>
+              </div>
+              <div class="desglose-item devolucion">
+                <span class="desglose-label">Devoluciones:</span>
+                <span class="desglose-value">-{{ formatearMoneda(ventaSeleccionada.totalDevoluciones) }}</span>
+              </div>
+              <div class="desglose-separador"></div>
+            </div>
+
             <div class="resumen-fila">
               <div class="resumen-item">
-                <span class="resumen-label">Total:</span>
+                <span class="resumen-label">Total {{ ventaSeleccionada.totalDevoluciones && parseFloat(ventaSeleccionada.totalDevoluciones) > 0 ? 'actual' : '' }}:</span>
                 <span class="resumen-value total-value">{{ formatearMoneda(ventaSeleccionada.total) }}</span>
               </div>
               
-              <div class="resumen-item">
-                <span class="resumen-label">Pagó con:</span>
-                <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.pagoCon) }}</span>
-              </div>
+              <!-- Venta en Efectivo -->
+              <ng-container *ngIf="ventaSeleccionada.formaDePago === 1">
+                <div class="resumen-item">
+                  <span class="resumen-label">Pagó con:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.pagoCon) }}</span>
+                </div>
+                
+                <div class="resumen-item">
+                  <span class="resumen-label">Cambio:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.cambio) }}</span>
+                </div>
+              </ng-container>
               
-              <div class="resumen-item">
-                <span class="resumen-label">Cambio:</span>
-                <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.cambio) }}</span>
-              </div>
+              <!-- Venta a Crédito -->
+              <ng-container *ngIf="ventaSeleccionada.formaDePago === 2">
+                <div class="resumen-item">
+                  <span class="resumen-label">Forma de pago:</span>
+                  <span class="resumen-value credito-badge">CRÉDITO (FIADO)</span>
+                </div>
+                
+                <div class="resumen-item">
+                  <span class="resumen-label">Total {{ ventaSeleccionada.totalDevoluciones && parseFloat(ventaSeleccionada.totalDevoluciones) > 0 ? 'actual' : '' }} a crédito:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.total) }}</span>
+                </div>
+              </ng-container>
+              
+              <!-- Venta Mixta -->
+              <ng-container *ngIf="ventaSeleccionada.formaDePago === 3">
+                <div class="resumen-item">
+                  <span class="resumen-label">Pagado en efectivo:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.totalPagadoEfectivo) }}</span>
+                </div>
+                
+                <div class="resumen-item">
+                  <span class="resumen-label">Pagado a crédito:</span>
+                  <span class="resumen-value">{{ formatearMoneda(ventaSeleccionada.totalPagadoCredito) }}</span>
+                </div>
+              </ng-container>
             </div>
           </div>
 

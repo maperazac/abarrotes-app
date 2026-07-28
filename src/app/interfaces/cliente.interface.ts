@@ -15,7 +15,8 @@ export default interface ClienteInterface {
 
 export interface VentaCreditoInterface {
   id?: string;
-  idVenta: string;
+  idVenta: string; // ID de Firestore de la venta
+  idTempVenta: number; // ID temporal visible de la venta (número de folio)
   idCliente: string;
   fechaVenta: Timestamp;
   total: number;

@@ -3,8 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { usuarioModel } from '../models/usuario.model';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { BehaviorSubject, interval, of } from 'rxjs';
+import { BehaviorSubject, interval, of, from } from 'rxjs';
 import { Router } from '@angular/router';
+import { Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -61,58 +62,72 @@ export class AuthService {
 
   // Login
   // https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=[API_KEY]
-  constructor(private http: HttpClient, private router: Router) { 
+  constructor(
+    private http: HttpClient, 
+    private router: Router,
+    private auth: Auth
+  ) { 
     this.leerToken();
   }
   
 
   logout(){
-    localStorage.removeItem('token');
-    localStorage.removeItem('tokenExpiration');
-    localStorage.removeItem('efectivoInicialEnCaja');
-    localStorage.removeItem('fechaInicioSesion');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('nombreUsuario');
-    this.router.navigate(['/login']);
+    // Cerrar sesión en Firebase Auth
+    signOut(this.auth).then(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiration');
+      localStorage.removeItem('efectivoInicialEnCaja');
+      localStorage.removeItem('fechaInicioSesion');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('nombreUsuario');
+      this.router.navigate(['/login']);
+    }).catch(error => {
+      console.error('Error al cerrar sesión:', error);
+      // Aún así limpiar localStorage y redirigir
+      localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiration');
+      localStorage.removeItem('efectivoInicialEnCaja');
+      localStorage.removeItem('fechaInicioSesion');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('nombreUsuario');
+      this.router.navigate(['/login']);
+    });
   }
 
   login(usuario: usuarioModel){
-    const authData = {
-      ...usuario,
-      returnSecureToken: true
-    };
-
-    return this.http.post(
-      `${this.url}signInWithPassword?key=${this.apikey}`,
-      authData
-    ).pipe(
-      map(resp => {
-        this.guardarToken(resp['idToken']);
-        // Guardar userId y nombreUsuario
-        localStorage.setItem('userId', resp['localId']);
-        localStorage.setItem('nombreUsuario', resp['email'].split('@')[0]);
-        return resp;
-      })
+    // Usar el SDK de Firebase Auth en lugar de HTTP directo
+    return from(signInWithEmailAndPassword(this.auth, usuario.email, usuario.password)).pipe(
+      map(userCredential => {
+        // El token se maneja automáticamente por Firebase
+        const user = userCredential.user;
+        
+        // Obtener el token para guardarlo (opcional, pero mantenemos compatibilidad)
+        return user.getIdToken().then(token => {
+          this.guardarToken(token);
+          localStorage.setItem('userId', user.uid);
+          localStorage.setItem('nombreUsuario', user.email?.split('@')[0] || '');
+          return userCredential;
+        });
+      }),
+      switchMap(promise => from(promise))
     );
   }
 
   nuevoUsuario(usuario: usuarioModel){
-    const authData = {
-      ...usuario,
-      returnSecureToken: true
-    };
-
-    return this.http.post(
-      `${this.url}signUp?key=${this.apikey}`,
-      authData
-    ).pipe(
-      map(resp => {
-        this.guardarToken(resp['idToken']);
-        // Guardar userId y nombreUsuario
-        localStorage.setItem('userId', resp['localId']);
-        localStorage.setItem('nombreUsuario', resp['email'].split('@')[0]);
-        return resp;
-      })
+    // Usar el SDK de Firebase Auth en lugar de HTTP directo
+    return from(createUserWithEmailAndPassword(this.auth, usuario.email, usuario.password)).pipe(
+      map(userCredential => {
+        const user = userCredential.user;
+        
+        // Obtener el token para guardarlo
+        return user.getIdToken().then(token => {
+          this.guardarToken(token);
+          localStorage.setItem('userId', user.uid);
+          localStorage.setItem('nombreUsuario', user.email?.split('@')[0] || '');
+          return userCredential;
+        });
+      }),
+      switchMap(promise => from(promise))
     );
   }
 
